@@ -1,0 +1,682 @@
+{% extends 'core/base.html' %}
+
+{% block title %}Hospital Dashboard - PHLMS{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Custom Theme Colors */
+    :root {
+        --primary-teal: #0891b2;
+        --dark-teal: #0e7490;
+        --light-bg: #f8fafc;
+    }
+
+    .dashboard-header {
+        background: linear-gradient(135deg, var(--primary-teal), var(--dark-teal));
+        color: white;
+        padding: 22px;
+        border-radius: 18px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 30px;
+        box-shadow: 0 8px 25px rgba(8, 145, 178, 0.3);
+    }
+
+    .stats-card {
+        background: white;
+        border-radius: 18px;
+        padding: 22px;
+        display: flex;
+        align-items: center;
+        box-shadow: 0 5px 20px rgba(0, 0, 0, 0.06);
+        transition: all 0.3s ease;
+        border-left: 5px solid transparent;
+        height: 100%;
+        text-decoration: none;
+        color: inherit;
+        cursor: pointer;
+    }
+
+    .stats-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+    }
+
+    .stats-icon {
+        width: 60px;
+        height: 60px;
+        border-radius: 16px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.6rem;
+        color: white;
+        margin-right: 20px;
+    }
+
+    .card-teal {
+        border-left-color: #1abc9c;
+    }
+
+    .icon-teal {
+        background: linear-gradient(135deg, #1abc9c, #16a085);
+    }
+
+    .card-pink {
+        border-left-color: #ff6b6b;
+    }
+
+    .icon-pink {
+        background: linear-gradient(135deg, #ff6b6b, #ee5253);
+    }
+
+    .card-blue {
+        border-left-color: #4834d4;
+    }
+
+    .icon-blue {
+        background: linear-gradient(135deg, #686de0, #4834d4);
+    }
+
+    .card-orange {
+        border-left-color: #f0932b;
+    }
+
+    .icon-orange {
+        background: linear-gradient(135deg, #f0932b, #ffbe76);
+    }
+
+    .chart-number {
+        font-size: 2rem;
+        font-weight: bold;
+        line-height: 1;
+        color: #2d3436;
+    }
+
+    .chart-label {
+        color: #636e72;
+        font-size: 0.9rem;
+        margin-bottom: 5px;
+    }
+
+    .btn-add-user {
+        background: var(--primary-teal);
+        border: none;
+        padding: 10px 20px;
+        border-radius: 30px;
+        color: white;
+        font-weight: 600;
+    }
+
+    .btn-add-user:hover {
+        background: var(--dark-teal);
+        color: white;
+    }
+
+    .nav-card-title {
+        font-size: 1.2rem;
+        font-weight: bold;
+        margin-bottom: 0.5rem;
+    }
+
+    .nav-card-desc {
+        color: #636e72;
+        font-size: 0.9rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class='dashboard-header'>
+    <div class='d-flex align-items-center'>
+        <i class='fas fa-hospital-alt fa-2x me-3'></i>
+        <h3 class='mb-0 fw-bold'>{{ hospital.name }} Dashboard</h3>
+    </div>
+    <div class='d-flex align-items-center'>
+        <button class='btn btn-light text-teal me-3 shadow-sm' data-bs-toggle='modal' data-bs-target='#settingsModal'>
+            <i class='fas fa-cog me-2'></i>Settings
+        </button>
+        <button class='btn btn-light text-teal me-3 shadow-sm' data-bs-toggle='modal' data-bs-target='#addUserModal'>
+            <i class='fas fa-plus me-2'></i>Add User
+        </button>
+        <span class='me-3'><i class='fas fa-user-shield me-2'></i>Hospital Admin</span>
+    </div>
+</div>
+
+<!-- Navigation Cards -->
+<div class='row g-4 mb-5'>
+    <div class='col-md-3'>
+        <a href="{% url 'hospital_doctors' %}" class='stats-card card-teal'>
+            <div class='stats-icon icon-teal'><i class='fas fa-user-md'></i></div>
+            <div>
+                <div class='nav-card-title'>Doctors</div>
+                <div class='chart-number'>{{ doctor_count }}</div>
+                <div class='nav-card-desc'>View & Manage Doctors</div>
+            </div>
+        </a>
+    </div>
+
+    <div class='col-md-3'>
+        <a href="{% url 'hospital_patients' %}" class='stats-card card-pink'>
+            <div class='stats-icon icon-pink'><i class='fas fa-users'></i></div>
+            <div>
+                <div class='nav-card-title'>Patients</div>
+                <div class='chart-number'>{{ patient_count }}</div>
+                <div class='nav-card-desc'>View & Manage Patients</div>
+            </div>
+        </a>
+    </div>
+
+    <div class='col-md-3'>
+        <a href="{% url 'hospital_staff' %}" class='stats-card card-orange'>
+            <div class='stats-icon icon-orange'><i class='fas fa-user-nurse'></i></div>
+            <div>
+                <div class='nav-card-title'>Staff</div>
+                <div class='chart-number'>{{ staff_count }}</div>
+                <div class='nav-card-desc'>Nurses, Lab, Pharmacy</div>
+            </div>
+        </a>
+    </div>
+
+    <div class='col-md-3'>
+        <a href="{% url 'hospital_emergency' %}" class='stats-card card-blue'>
+            <div class='stats-icon icon-blue'><i class='fas fa-ambulance'></i></div>
+            <div>
+                <div class='nav-card-title'>Emergency</div>
+                <div class='chart-number'>{{ emergency_cases.count }}</div>
+                <div class='nav-card-desc'>Manage Emergency Cases</div>
+            </div>
+        </a>
+    </div>
+
+    <div class='col-md-3'>
+        <a href="{% url 'hospital_attendance' %}" class='stats-card card-teal' style="border-left-color: #6c5ce7;">
+            <div class='stats-icon' style="background: linear-gradient(135deg, #a29bfe, #6c5ce7);"><i
+                    class='fas fa-calendar-check'></i></div>
+            <div>
+                <div class='nav-card-title'>Attendance</div>
+                <div class='chart-number'><i class='fas fa-clipboard-list'></i></div>
+                <div class='nav-card-desc'>View Staff Register</div>
+            </div>
+        </a>
+    </div>
+
+    <div class='col-md-3'>
+        <a href="{% url 'manage_wards' %}" class='stats-card card-teal' style="border-left-color: #e17055;">
+            <div class='stats-icon' style="background: linear-gradient(135deg, #fab1a0, #e17055);"><i
+                    class='fas fa-hospital-alt'></i></div>
+            <div>
+                <div class='nav-card-title'>Wards</div>
+                <div class='chart-number'><i class='fas fa-bed'></i></div>
+                <div class='nav-card-desc'>Add & Manage Wards</div>
+            </div>
+        </a>
+    </div>
+</div>
+
+
+
+<!-- Add User Modal -->
+<div class='modal fade' id='addUserModal' tabindex='-1' aria-hidden='true'>
+    <div class='modal-dialog modal-dialog-centered'>
+        <div class='modal-content border-0 shadow-lg rounded-4'>
+            <div class='modal-header border-0 pb-0'>
+                <h5 class='modal-title fw-bold text-teal'><i class='fas fa-user-plus me-2'></i>Add New User</h5>
+                <button type='button' class='btn-close' data-bs-dismiss='modal' aria-label='Close'></button>
+            </div>
+            <div class='modal-body p-4'>
+                <form method='post' action="{% url 'hospital_dashboard' %}" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    <div class='mb-3'>
+                        <label class='form-label small fw-bold'>Full Name *</label>
+                        <input type='text' name='full_name' class='form-control rounded-pill'
+                            placeholder='Enter full name' required>
+                    </div>
+
+                    <div class='mb-3'>
+                        <label class='form-label small fw-bold'>Username *</label>
+                        <input type='text' name='username' class='form-control rounded-pill'
+                            placeholder='Enter username' required>
+                    </div>
+
+                    <div class='mb-3'>
+                        <label class='form-label small fw-bold'>Password *</label>
+                        <input type='password' name='password' class='form-control rounded-pill'
+                            placeholder='Enter password' required>
+                    </div>
+
+                    <div class='mb-3'>
+                        <label class='form-label small fw-bold'>Role *</label>
+                        <select name='role' class='form-select rounded-pill' id='roleSelect' required
+                            onchange='toggleSpecialty()'>
+                            <option value='Doctor'>Doctor</option>
+                            <option value='Nurse'>Nurse</option>
+                            <option value='Lab Technician'>Lab Technician</option>
+                            <option value='Pharmacist'>Pharmacist</option>
+                            <option value='Other Staff'>Other Staff</option>
+                            <option value='Patient'>Patient</option>
+                        </select>
+                    </div>
+
+                    <div class='mb-3' id='specificRoleField' style='display: none;'>
+                        <label class='form-label small fw-bold'>Job Title / Role *</label>
+                        <select name='specific_role' id='specificRoleInput' class='form-select rounded-pill'>
+                            <option value="" selected disabled>-- Select Role --</option>
+                            <option value="Receptionist">Receptionist</option>
+                            <option value="Nurse Assistant">Nurse Assistant</option>
+                            <option value="Ward Boy">Ward Boy</option>
+                            <option value="Cleaner">Cleaner</option>
+                            <option value="Security Guard">Security Guard</option>
+                            <option value="Driver">Driver</option>
+                            <option value="Manager">Manager</option>
+                            <option value="Accountant">Accountant</option>
+                            <option value="IT Support">IT Support</option>
+                            <option value="Maintenance">Maintenance</option>
+                            <option value="HR">HR</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
+
+                    <div class='row g-2 mb-3'>
+                        <div class='col'>
+                            <label class='form-label small fw-bold'>Email</label>
+                            <input type='email' name='email' class='form-control rounded-pill' placeholder='Email'>
+                        </div>
+                        <div class='col'>
+                            <label class='form-label small fw-bold'>Phone</label>
+                            <input type='tel' name='phone' class='form-control rounded-pill' placeholder='Phone'>
+                        </div>
+                    </div>
+
+                    <!-- Personal Details for Patients -->
+                    <div id="patientDetailsField" style="display: none;">
+                        <h6 class="fw-bold mt-4 mb-3 border-bottom pb-2">Personal Details</h6>
+                        <div class='row g-2 mb-3'>
+                            <div class='col'>
+                                <label class='form-label small fw-bold'>Date of Birth</label>
+                                <input type='date' name='date_of_birth' class='form-control rounded-pill'
+                                    max="{% now 'Y-m-d' %}">
+                            </div>
+                            <div class='col'>
+                                <label class='form-label small fw-bold'>Gender</label>
+                                <select name='gender' class='form-select rounded-pill'>
+                                    <option value="" selected disabled>Select Gender</option>
+                                    <option value="Male">Male</option>
+                                    <option value="Female">Female</option>
+                                    <option value="Other">Other</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class='mb-3'>
+                            <label class='form-label small fw-bold'>Address</label>
+                            <input type='text' name='address' class='form-control rounded-pill'
+                                placeholder='Enter full address'>
+                        </div>
+                    </div>
+
+                    <div class="mb-4" id="specialtyField">
+                        <label class="form-label small fw-bold">Specialization</label>
+                        <select name="specialization" class="form-select rounded-pill">
+                            <option value="">-- Select Specialization --</option>
+                            <option value="General">General Practice</option>
+                            <option value="Cardiology">Cardiology</option>
+                            <option value="Neurology">Neurology</option>
+                            <option value="Orthopedics">Orthopedics</option>
+                            <option value="Pediatrics">Pediatrics</option>
+                            <option value="Gynecology">Gynecology</option>
+                            <option value="Dermatology">Dermatology</option>
+                            <option value="Oncology">Oncology</option>
+                            <option value="Psychiatry">Psychiatry</option>
+                            <option value="ENT">ENT (Ear, Nose, Throat)</option>
+                            <option value="Ophthalmology">Ophthalmology</option>
+                            <option value="Dental">Dental</option>
+                            <option value="Surgery">Surgery</option>
+                            <option value="Urology">Urology</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-3" id="appointmentFeesField" style="display: none;">
+                        <label class="form-label small fw-bold">Appointment Fees (₹)</label>
+                        <input type="number" name="appointment_fees" class="form-control rounded-pill" step="0.01"
+                            min="0" placeholder="e.g. 500">
+                    </div>
+
+                    <div class="row g-2 mb-3" id="salaryField">
+                        <div class="col">
+                            <label class="form-label small fw-bold">Salary (₹)</label>
+                            <input type="number" name="salary" class="form-control rounded-pill" step="0.01" min="0"
+                                placeholder="e.g. 50000">
+                        </div>
+                        <div class="col">
+                            <label class="form-label small fw-bold">Frequency</label>
+                            <select name="salary_frequency" class="form-select rounded-pill">
+                                <option value="Monthly" selected>Monthly</option>
+                                <option value="Weekly">Weekly</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Shift Schedule -->
+                    <div class="mb-4" id="scheduleField">
+                        <!-- Availability & Scheduling -->
+                        <h6 class="fw-bold mt-4 mb-3 border-bottom pb-2">Availability & Schedule</h6>
+
+                        <div class="mb-3">
+                            <label class="form-label">Available Days</label>
+                            <div class="d-flex flex-wrap gap-2">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="available_days" value="Monday"
+                                        id="dayMon" checked>
+                                    <label class="form-check-label" for="dayMon">Mon</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="available_days"
+                                        value="Tuesday" id="dayTue" checked>
+                                    <label class="form-check-label" for="dayTue">Tue</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="available_days"
+                                        value="Wednesday" id="dayWed" checked>
+                                    <label class="form-check-label" for="dayWed">Wed</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="available_days"
+                                        value="Thursday" id="dayThu" checked>
+                                    <label class="form-check-label" for="dayThu">Thu</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="available_days" value="Friday"
+                                        id="dayFri" checked>
+                                    <label class="form-check-label" for="dayFri">Fri</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="available_days"
+                                        value="Saturday" id="daySat">
+                                    <label class="form-check-label" for="daySat">Sat</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="available_days" value="Sunday"
+                                        id="daySun">
+                                    <label class="form-check-label" for="daySun">Sun</label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="shift_start" class="form-label">Shift Start Time</label>
+                                <input type="time" class="form-control" id="shift_start" name="shift_start">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="shift_end" class="form-label">Shift End Time</label>
+                                <input type="time" class="form-control" id="shift_end" name="shift_end">
+                            </div>
+                        </div>
+                        <div class="row" id="break_time_row" style="display: none;">
+                            <div class="col-md-6 mb-3">
+                                <label for="break_start" class="form-label">Break/Round Start Time</label>
+                                <input type="time" class="form-control" id="break_start" name="break_start">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="break_end" class="form-label">Break/Round End Time</label>
+                                <input type="time" class="form-control" id="break_end" name="break_end">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class='mb-3'>
+                        <label class='form-label small fw-bold'>Photo</label>
+                        <input type='file' name='image' class='form-control rounded-pill' accept="image/*">
+                        <small class="text-muted">Upload a profile photo (Optional)</small>
+                    </div>
+
+                    <!-- Experience Field (Doctors Only) -->
+                    <div class="mb-3" id="experienceField" style="display: none;">
+                        <label class="form-label small fw-bold">Experience (Years)</label>
+                        <input type="number" name="experience" class="form-control rounded-pill" placeholder="e.g. 5"
+                            min="0">
+                    </div>
+
+                    <div class='d-grid'>
+                        <button type='submit' class='btn btn-primary rounded-pill py-2'
+                            style='background: #1abc9c; border: none;'>
+                            <i class='fas fa-check-circle me-2'></i>Create User
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .day-checkbox {
+        display: none;
+    }
+
+    .day-label {
+        cursor: pointer;
+        padding: 8px 16px;
+        border: 1px solid #e0e0e0;
+        border-radius: 50px;
+        background-color: #fff;
+        color: #6c757d;
+        font-size: 0.85rem;
+        font-weight: 500;
+        transition: all 0.2s ease;
+        user-select: none;
+    }
+
+    .day-checkbox:checked+.day-label {
+        background-color: #1abc9c;
+        color: white;
+        border-color: #1abc9c;
+        box-shadow: 0 2px 5px rgba(26, 188, 156, 0.3);
+    }
+
+    .day-label:hover {
+        background-color: #f8f9fa;
+        border-color: #ced4da;
+    }
+
+    .day-checkbox:checked+.day-label:hover {
+        background-color: #16a085;
+        border-color: #16a085;
+    }
+
+    .form-floating>.form-control,
+    .form-floating>.form-select {
+        border-radius: 1rem;
+        border: 1px solid #e0e0e0;
+    }
+
+    .form-floating>.form-control:focus,
+    .form-floating>.form-select:focus {
+        border-color: #1abc9c;
+        box-shadow: 0 0 0 0.25rem rgba(26, 188, 156, 0.25);
+    }
+
+    .modal-header {
+        background: linear-gradient(135deg, #1abc9c 0%, #16a085 100%);
+        color: white;
+        border-bottom: none;
+        padding: 1.5rem;
+    }
+
+    .modal-title {
+        font-weight: 700;
+        letter-spacing: 0.5px;
+    }
+
+    .modal-content {
+        border: none;
+        border-radius: 1.5rem;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+    }
+
+    .input-group-text {
+        border-color: #e0e0e0;
+    }
+
+    /* Premium Time Input */
+    input[type="time"] {
+        appearance: none;
+        -webkit-appearance: none;
+        background-color: #f8f9fa;
+        border: 1px solid #e0e0e0;
+        font-weight: 600;
+        color: #2c3e50;
+        padding-left: 20px;
+        min-height: 58px;
+    }
+
+    input[type="time"]:focus {
+        background-color: #fff;
+        border-color: #1abc9c;
+        box-shadow: 0 0 0 4px rgba(26, 188, 156, 0.1);
+    }
+
+    input[type="time"]::-webkit-calendar-picker-indicator {
+        background: transparent;
+        bottom: 0;
+        color: transparent;
+        cursor: pointer;
+        height: auto;
+        left: 0;
+        position: absolute;
+        right: 0;
+        top: 0;
+        width: auto;
+    }
+
+    .form-floating>label {
+        padding-left: 25px;
+    }
+
+    .btn-close-white {
+        filter: brightness(0) invert(1);
+    }
+</style>
+
+<!-- Flatpickr CSS -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+<link rel="stylesheet" type="text/css" href="https://npmcdn.com/flatpickr/dist/themes/teal.css">
+
+<!-- Flatpickr JS -->
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        flatpickr("input[type=time]", {
+            enableTime: true,
+            noCalendar: true,
+            dateFormat: "H:i", // Keep 24h format for backend submission if needed
+            altInput: true,     // Show a different input to the user
+            altFormat: "h:i K", // 12-hour format with AM/PM
+            time_24hr: false    // Use AM/PM picker
+        });
+    });
+
+    function toggleSpecialty() {
+        const roleSelect = document.getElementById('roleSelect');
+        if (!roleSelect) return;
+
+        const role = roleSelect.value;
+        const specialtyField = document.getElementById('specialtyField');
+        const specificRoleField = document.getElementById('specificRoleField');
+        const specificRoleInput = document.getElementById('specificRoleInput');
+        const appointmentFeesField = document.getElementById('appointmentFeesField');
+        const salaryField = document.getElementById('salaryField');
+        const experienceField = document.getElementById('experienceField');
+        const breakTimeRow = document.getElementById('break_time_row');
+        const scheduleField = document.getElementById('scheduleField');
+        const patientDetailsField = document.getElementById('patientDetailsField');
+
+
+        // Doctor Logic
+        if (role === 'Doctor') {
+            specialtyField.style.display = 'block';
+            appointmentFeesField.style.display = 'block';
+            if (experienceField) experienceField.style.display = 'block';
+            breakTimeRow.style.display = 'flex'; // Show break time for doctors
+        } else {
+            specialtyField.style.display = 'none';
+            appointmentFeesField.style.display = 'none';
+            if (experienceField) experienceField.style.display = 'none';
+            breakTimeRow.style.display = 'none'; // Hide break time for others
+        }
+
+        // Other Staff Logic
+        if (role === 'Other Staff') {
+            specificRoleField.style.display = 'block';
+            specificRoleInput.required = true;
+        } else {
+            specificRoleField.style.display = 'none';
+            specificRoleInput.required = false;
+        }
+
+        // Patient Details & Salary Logic
+        if (role === 'Patient') {
+            salaryField.style.display = 'none';
+            if (scheduleField) scheduleField.style.display = 'none';
+            if (patientDetailsField) patientDetailsField.style.display = 'block';
+        } else {
+            salaryField.style.display = 'flex';
+            if (scheduleField) scheduleField.style.display = 'block';
+            if (patientDetailsField) patientDetailsField.style.display = 'none';
+        }
+    }
+    // Initialize on load
+    document.addEventListener('DOMContentLoaded', function () {
+        toggleSpecialty();
+    });
+</script>
+
+<!-- Settings Modal -->
+<div class='modal fade' id='settingsModal' tabindex='-1' aria-hidden='true'>
+    <div class='modal-dialog modal-dialog-centered'>
+        <div class='modal-content border-0 shadow-lg rounded-4'>
+            <div class='modal-header border-0 pb-0'>
+                <h5 class='modal-title fw-bold text-teal'><i class='fas fa-cogs me-2'></i>Hospital Settings</h5>
+                <button type='button' class='btn-close' data-bs-dismiss='modal' aria-label='Close'></button>
+            </div>
+            <div class='modal-body p-4'>
+                <form method='post' action="{% url 'hospital_dashboard' %}">
+                    {% csrf_token %}
+                    <input type="hidden" name="update_settings" value="true">
+
+                    <div class='mb-4'>
+                        <h6 class="fw-bold text-dark border-bottom pb-2 mb-3">Leave Configuration</h6>
+
+                        <div class="mb-3">
+                            <label class='form-label small fw-bold'>Max Allowed Leave Days / Year</label>
+                            <input type='number' name='max_leave_days' class='form-control rounded-pill'
+                                value="{{ hospital.max_leave_days|default:12 }}" required>
+                            <small class="text-muted">Default allowed leave days for all staff.</small>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class='form-label small fw-bold'>Salary Deduction per Extra Day ($)</label>
+                            <div class="input-group">
+                                <span class="input-group-text rounded-start-pill border-end-0 bg-light">$</span>
+                                <input type='number' name='extra_leave_deduction'
+                                    class='form-control rounded-end-pill border-start-0' step="0.01"
+                                    value="{{ hospital.extra_leave_deduction|default:0.00 }}" required>
+                            </div>
+                            <small class="text-muted">Amount to deduct for each day exceeding the limit.</small>
+                        </div>
+                    </div>
+
+                    <div class='d-grid'>
+                        <button type='submit' class='btn btn-primary rounded-pill py-2'
+                            style='background: #1abc9c; border: none;'>
+                            <i class='fas fa-save me-2'></i>Save Settings
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

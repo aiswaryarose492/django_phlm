@@ -1,0 +1,439 @@
+{% extends 'core/base.html' %}
+
+{% block title %}Lab Dashboard - PHLMS{% endblock %}
+
+{% block extra_css %}
+<style>
+    :root {
+        --primary-purple: #6366f1;
+        --light-purple: #818cf8;
+        --bg-light: #f8fafc;
+    }
+
+    .dashboard-header {
+        background: linear-gradient(135deg, #0891b2 0%, #6366f1 50%, #8b5cf6 100%);
+        color: white;
+        padding: 30px;
+        border-radius: 20px;
+        margin-bottom: 30px;
+        box-shadow: 0 15px 40px rgba(8, 145, 178, 0.25);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .dashboard-header::before {
+        content: '';
+        position: absolute;
+        top: -50%;
+        right: -20%;
+        width: 300px;
+        height: 300px;
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 50%;
+    }
+
+    .stats-card {
+        background: white;
+        border-radius: 18px;
+        padding: 24px;
+        display: flex;
+        align-items: center;
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.06);
+        height: 100%;
+        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        border: 1px solid rgba(0, 0, 0, 0.03);
+    }
+
+    .stats-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 15px 40px rgba(0, 0, 0, 0.1);
+    }
+
+    .stats-icon {
+        width: 65px;
+        height: 65px;
+        border-radius: 16px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.7rem;
+        margin-right: 18px;
+    }
+
+    .icon-indigo {
+        background: linear-gradient(135deg, rgba(99, 102, 241, 0.15), rgba(99, 102, 241, 0.25));
+        color: #6366f1;
+    }
+
+    .icon-green {
+        background: linear-gradient(135deg, rgba(16, 185, 129, 0.15), rgba(16, 185, 129, 0.25));
+        color: #10b981;
+    }
+
+    .icon-orange {
+        background: linear-gradient(135deg, rgba(245, 158, 11, 0.15), rgba(245, 158, 11, 0.25));
+        color: #f59e0b;
+    }
+
+    .icon-red {
+        background: linear-gradient(135deg, rgba(239, 68, 68, 0.15), rgba(239, 68, 68, 0.25));
+        color: #ef4444;
+    }
+
+    .chart-number {
+        font-size: 2.2rem;
+        font-weight: 800;
+        color: #0f172a;
+        line-height: 1;
+    }
+
+    .section-title {
+        font-weight: 700;
+        color: #0f172a;
+        margin-bottom: 20px;
+        font-size: 1.3rem;
+    }
+
+    .report-card {
+        background: white;
+        border-radius: 18px;
+        padding: 22px;
+        margin-bottom: 16px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);
+        border-left: 5px solid transparent;
+        transition: all 0.3s ease;
+    }
+
+    .report-card:hover {
+        box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
+        transform: translateX(5px);
+    }
+
+    .report-card.pending {
+        border-left-color: #f59e0b;
+    }
+
+    .report-card.completed {
+        border-left-color: #10b981;
+    }
+
+    .user-avatar {
+        width: 45px;
+        height: 45px;
+        border-radius: 14px;
+        background: linear-gradient(135deg, #6366f1, #8b5cf6);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+        color: white;
+        font-size: 1.1rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="dashboard-header d-flex justify-content-between align-items-center">
+    <div>
+        <h2 class="mb-0 fw-bold"><i class="fas fa-flask me-3"></i>Lab Dashboard</h2>
+        <p class="mb-0 opacity-75">Welcome, {{ user.first_name }} {{ user.last_name }}</p>
+    </div>
+    <div class="text-end">
+        <span class="badge bg-white text-primary px-3 py-2 rounded-pill">
+            <i class="fas fa-hospital me-2"></i>{{ lab_profile.hospital.name }}
+        </span>
+    </div>
+</div>
+
+<!-- Stats Row -->
+<div class="row g-4 mb-5">
+    <div class="col-md-3">
+        <div class="stats-card">
+            <div class="stats-icon icon-indigo"><i class="fas fa-file-medical"></i></div>
+            <div>
+                <div class="text-muted small">Total Requests</div>
+                <div class="chart-number">{{ total_reports }}</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stats-card">
+            <div class="stats-icon icon-green"><i class="fas fa-check-circle"></i></div>
+            <div>
+                <div class="text-muted small">Completed</div>
+                <div class="chart-number">{{ total_completed }}</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stats-card">
+            <div class="stats-icon icon-orange"><i class="fas fa-clock"></i></div>
+            <div>
+                <div class="text-muted small">Pending</div>
+                <div class="chart-number">{{ total_pending }}</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stats-card">
+            <div class="stats-icon icon-red"><i class="fas fa-exclamation-circle"></i></div>
+            <div>
+                <div class="text-muted small">Urgent</div>
+                <div class="chart-number">0</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Main Content -->
+    <div class="col-lg-8">
+
+        <!-- Emergency Assignments -->
+        {% if emergency_cases %}
+        <div class="card border-0 shadow-sm rounded-4 mb-4 border-start border-5 border-danger">
+            <div class="card-header bg-white border-0 py-3">
+                <h5 class="fw-bold text-danger mb-0"><i class="fas fa-ambulance me-2"></i>Emergency Assignments</h5>
+            </div>
+            <div class="card-body">
+                <div class="row g-3">
+                    {% for case in emergency_cases %}
+                    <div class="col-md-6">
+                        <div class="p-3 bg-light rounded-3">
+                            <div class="d-flex justify-content-between mb-2">
+                                <span class="badge bg-danger">{{ case.severity }}</span>
+                                <small>{{ case.created_at|time:"H:i" }}</small>
+                            </div>
+                            <h6 class="fw-bold">{{ case.patient_name }}</h6>
+                            <p class="small text-muted mb-0">{{ case.symptoms }}</p>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Pending Requests -->
+        <h4 class="section-title">Pending Test Requests</h4>
+        {% if test_requests %}
+        {% for req in test_requests %}
+        <div class="report-card pending">
+            <div class="d-flex justify-content-between align-items-center">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="user-avatar bg-warning text-white">{{ req.appointment.patient.user.first_name|make_list|first }}</div>
+                    <div>
+                        <h6 class="mb-0 fw-bold">{{ req.appointment.patient.user.get_full_name }}</h6>
+                        <small class="text-muted">{{ req.test_name }} • Dr. {{ req.appointment.doctor.user.last_name }}</small>
+                        <div class="small text-danger mt-1"><i class="fas fa-info-circle me-1"></i>Reason: {{ req.reason }}</div>
+                    </div>
+                </div>
+                <div>
+                    <a href="{% url 'upload_report' req.id %}" class="btn btn-sm btn-primary rounded-pill px-3">
+                        <i class="fas fa-edit me-2"></i>Process
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        {% endfor %}
+        {% else %}
+        <div class="text-center py-5 text-muted bg-white rounded-3 mb-4">
+            <i class="fas fa-clipboard-check fa-3x mb-3 text-success"></i>
+            <p>No pending test requests!</p>
+        </div>
+        {% endif %}
+
+        <!-- Patient Uploaded Tests -->
+        {% if patient_uploads %}
+        <h4 class="section-title mt-4">Patient Uploaded Tests</h4>
+        <div class="bg-white rounded-4 p-4 shadow-sm mb-4">
+            {% for report in patient_uploads %}
+            <div class="report-card pending">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="user-avatar bg-info text-white">
+                            {{ report.patient.user.first_name|make_list|first }}
+                        </div>
+                        <div>
+                            <h6 class="mb-0 fw-bold">{{ report.patient.user.get_full_name }}</h6>
+                            <small class="text-muted">{{ report.test_type }} • {{ report.clean_title }}</small>
+                            <div class="small text-info mt-1">
+                                <i class="fas fa-image me-1"></i>
+                                Patient uploaded:
+                                {{ report.patient_uploaded_at|date:"M d, Y - h:i A" }}
+                            </div>
+                        </div>
+                    </div>
+                    <div>
+                        <a href="{% url 'lab_process_report' report.id %}"
+                            class="btn btn-sm btn-info rounded-pill px-3">
+                            <i class="fas fa-microscope me-2"></i>Process
+                        </a>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        <!-- Lab Uploaded (Awaiting Results) -->
+        {% if lab_uploads %}
+        <h4 class="section-title mt-4">Awaiting Results (File Uploaded)</h4>
+        <div class="bg-white rounded-4 p-4 shadow-sm mb-4 border-start border-5 border-warning">
+            {% for report in lab_uploads %}
+            <div class="report-card pending">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="user-avatar bg-warning text-white">
+                            {{ report.patient.user.first_name|make_list|first }}
+                        </div>
+                        <div>
+                            <h6 class="mb-0 fw-bold">{{ report.patient.user.get_full_name }}</h6>
+                            <small class="text-muted">{{ report.test_type }} • {{ report.clean_title }}</small>
+                            <div class="small text-warning mt-1">
+                                <i class="fas fa-file-upload me-1"></i>
+                                Lab uploaded:
+                                {{ report.uploaded_at|date:"M d, Y - h:i A" }}
+                            </div>
+                        </div>
+                    </div>
+                    <div>
+                        <a href="{% url 'lab_process_report' report.id %}"
+                            class="btn btn-sm btn-warning rounded-pill px-3">
+                            <i class="fas fa-edit me-2"></i>Add Results
+                        </a>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        <!-- Recent History -->
+        <h4 class="section-title mt-4">Completed Reports</h4>
+        <div class="bg-white rounded-4 p-4 shadow-sm">
+            {% for report in completed_reports %}
+            <div class="d-flex justify-content-between align-items-center border-bottom py-3">
+                <div class="d-flex align-items-center gap-3">
+                    {% if report.file %}
+                    {% if report.file.url|lower|slice:'-4:' == '.pdf' %}
+                    <div class="bg-light p-2 rounded-circle" style="color:#d32f2f;"><i
+                            class="fas fa-file-pdf fa-lg"></i></div>
+                    {% elif report.file.url|lower|slice:'-4:' in '.jpg.png.gif' or report.file.url|lower|slice:'-5:' == '.jpeg' %}
+                    <div class="bg-light p-2 rounded-circle" style="color:#388e3c;"><i class="fas fa-image fa-lg"></i>
+                    </div>
+                    {% else %}
+                    <div class="bg-light p-2 rounded-circle text-success"><i class="fas fa-file fa-lg"></i></div>
+                    {% endif %}
+                    {% else %}
+                    <div class="bg-light p-2 rounded-circle text-success"><i class="fas fa-check"></i></div>
+                    {% endif %}
+                    <div>
+                        <h6 class="mb-0 fw-bold">{{ report.clean_title }}</h6>
+                        {% if report.result %}
+                        <div class="small fw-bold text-primary mt-1 mb-1">Result: {{ report.result }}</div>
+                        {% endif %}
+                        <small class="text-muted">
+                            Patient: {{ report.patient.user.get_full_name }} •
+                            {{ report.uploaded_at|date:"M d, Y" }}
+                        </small>
+                    </div>
+                </div>
+                <div class="d-flex gap-2 align-items-center">
+                    {% if report.file %}
+                    <a href="{{ report.file.url }}" class="btn btn-sm btn-outline-primary rounded-pill" target="_blank">
+                        <i class="fas fa-download me-1"></i>Download
+                    </a>
+                    {% endif %}
+                    <span class="badge bg-success bg-opacity-10 text-success rounded-pill px-3">Completed</span>
+                </div>
+            </div>
+            {% empty %}
+            <p class="text-muted text-center my-3">No history yet.</p>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Right Sidebar: Wellbeing -->
+    <div class="col-lg-4">
+        <div class="bg-white rounded-4 p-4 shadow-sm h-100">
+            <h5 class="fw-bold mb-4">My Wellbeing</h5>
+
+            <!-- Attendance Tracker -->
+            <div class="mb-4">
+                <div
+                    class="alert {% if health_status.is_present %}alert-success{% else %}alert-warning{% endif %} d-flex align-items-center justify-content-between">
+                    <div>
+                        <i class="fas fa-calendar-check me-2"></i>
+                        <span class="fw-bold">Attendance</span>
+                    </div>
+                    {% if health_status.is_present %}
+                    <span class="badge bg-success">Present</span>
+                    {% else %}
+                    <span class="badge bg-warning text-dark">Not Marked</span>
+                    {% endif %}
+                </div>
+
+                {% if health_status.is_present %}
+                <button type="button" class="btn btn-outline-success w-100 fw-bold" disabled>
+                    <i class="fas fa-check-circle me-1"></i> Attendance Marked by Admin
+                </button>
+                {% else %}
+                <div class="text-center text-muted small mt-2">
+                    <i class="fas fa-info-circle me-1"></i> Attendance is marked by Hospital Admin.
+                </div>
+                {% endif %}
+            </div>
+
+            <hr>
+
+            <!-- Shift Management -->
+            <div class="mb-4">
+                {% if active_shift %}
+                <div class="alert alert-success d-flex align-items-center justify-content-between">
+                    <span><i class="fas fa-clock me-2"></i>On Duty</span>
+                    <small>{{ shift_start_time|time:"H:i" }}</small>
+                </div>
+
+                {% if shift_duration > 8 %}
+                <div class="alert alert-danger">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    Over Duty: {{ shift_duration }}h
+                </div>
+                {% endif %}
+
+                <a href="{% url 'toggle_staff_shift' %}" class="btn btn-outline-danger w-100 rounded-pill">End Shift</a>
+                {% else %}
+                <div class="text-center text-muted mb-3">
+                    <i class="fas fa-moon fa-2x mb-2"></i>
+                    <p>You are currently off duty.</p>
+                </div>
+                <a href="{% url 'toggle_staff_shift' %}" class="btn btn-primary w-100 rounded-pill"
+                    style="background: var(--primary-purple);">Start Shift</a>
+                {% endif %}
+            </div>
+
+            <hr>
+
+            <!-- Water Tracker -->
+            <div class="text-center">
+                <label class="d-block text-muted small fw-bold mb-2">HYDRATION TRACKER</label>
+                <div class="display-4 fw-bold text-primary">{{ water_intake }}</div>
+                <small class="text-muted">glasses today</small>
+
+                <a href="{% url 'update_staff_water' %}" class="btn btn-info text-white rounded-circle mt-3 shadow-sm"
+                    style="width: 50px; height: 50px; display: inline-flex; align-items: center; justify-content: center;">
+                    <i class="fas fa-plus"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+
+</script>
+{% endblock %}

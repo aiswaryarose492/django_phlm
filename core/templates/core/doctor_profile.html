@@ -1,0 +1,139 @@
+{% extends 'core/base.html' %}
+{% load static %}
+{% block title %}Profile & Settings | Doctor{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h3 class="fw-bold mb-0 text-dark"><i class="fas fa-user-cog text-warning me-2"></i>Profile & Settings</h3>
+    <a href="{% url 'doctor_dashboard' %}" class="btn btn-outline-secondary rounded-pill shadow-sm">
+        <i class="fas fa-arrow-left me-1"></i> Back to Hub
+    </a>
+</div>
+
+<div class="row g-4">
+
+    <!-- Profile Overview Card -->
+    <div class="col-lg-4">
+        <div class="card border-0 shadow-sm rounded-4 h-100 mb-4 bg-light text-center">
+            <div class="card-body p-5 d-flex flex-column align-items-center">
+                <div class="doctor-avatar shadow-sm mx-auto d-flex align-items-center justify-content-center mb-3"
+                    style="width: 120px; height: 120px; border-radius: 50%; background: linear-gradient(135deg, #f39c12, #d35400); color: white; font-size: 3.5rem; font-weight: bold; border: 5px solid white;">
+                    {{ doctor.user.first_name|make_list|first|default:doctor.user.username|make_list|first|upper }}
+                </div>
+                <h4 class="fw-bold text-dark mb-1">Dr. {{ doctor.user.get_full_name }}</h4>
+                <p class="text-muted mb-3 fs-6">{{ doctor.specialty }}</p>
+                <div class="bg-white rounded-pill px-4 py-2 border shadow-sm w-100">
+                    <span class="small text-muted text-uppercase fw-bold me-2">Status:</span>
+                    <span
+                        class="badge {% if doctor.available %}bg-success{% else %}bg-secondary{% endif %} rounded-pill fs-6 px-3">
+                        {% if doctor.available %}Available{% else %}Unavailable{% endif %}
+                    </span>
+                </div>
+                <div class="mt-4 text-start w-100">
+                    <p class="small text-muted mb-1"><i class="fas fa-hospital me-2 text-primary"></i><strong>Hospital:</strong> {{ doctor.hospital.name }}</p>
+                    <p class="small text-muted mb-1"><i
+                            class="fas fa-envelope me-2 text-primary"></i><strong>Email:</strong> {{ doctor.user.email }}</p>
+                    <p class="small text-muted mb-0"><i class="fas fa-phone me-2 text-primary"></i><strong>Contact:</strong> {{ doctor.contact_number|default:"N/A" }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-8">
+        <!-- Availability Management Section -->
+        <div class="card border-0 shadow-sm rounded-4 mb-4">
+            <div class="card-header bg-white border-0 py-3">
+                <h5 class="fw-bold mb-0"><i class="fas fa-clock me-2 text-primary"></i>Manage Availability Options</h5>
+            </div>
+            <div class="card-body p-4">
+                <form method="post" action="{% url 'update_doctor_availability' %}">
+                    {% csrf_token %}
+                    <div class="row g-4">
+                        <div class="col-md-12 mb-2 pb-3 border-bottom">
+                            <label class="form-label fw-bold d-block">Current Status</label>
+                            <div class="form-check form-switch fs-5">
+                                <input class="form-check-input" type="checkbox" id="available" name="available" {{ doctor.available|yesno:"checked," }}>
+                                <label class="form-check-label ms-2" for="available">I am currently available to take
+                                    appointments.</label>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold small text-muted text-uppercase">Available Days</label>
+                            <input type="text" class="form-control" name="available_days"
+                                value="{{ doctor.available_days }}"
+                                placeholder="Monday,Tuesday,Wednesday,Thursday,Friday">
+                            <div class="form-text">Comma separated days (e.g., Monday,Tuesday).</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold small text-muted text-uppercase">Max Appointments /
+                                Day</label>
+                            <input type="number" class="form-control" name="max_appointments_per_day"
+                                value="{{ doctor.max_appointments_per_day|default:10 }}" min="1" max="50">
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label fw-bold small text-muted text-uppercase">Office Start time</label>
+                            <input type="time" class="form-control" name="available_start_time"
+                                value="{{ doctor.available_start_time|time:'H:i'|default:'' }}">
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label fw-bold small text-muted text-uppercase">Office End time</label>
+                            <input type="time" class="form-control" name="available_end_time"
+                                value="{{ doctor.available_end_time|time:'H:i'|default:'' }}">
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label fw-bold small text-muted text-uppercase">Break Start</label>
+                            <input type="time" class="form-control" name="break_start_time"
+                                value="{{ doctor.break_start_time|time:'H:i'|default:'' }}">
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label fw-bold small text-muted text-uppercase">Break End</label>
+                            <input type="time" class="form-control" name="break_end_time"
+                                value="{{ doctor.break_end_time|time:'H:i'|default:'' }}">
+                        </div>
+                    </div>
+                    <div class="mt-4 text-end">
+                        <button type="submit" class="btn btn-primary rounded-pill px-5 py-2 shadow-sm fw-bold"><i
+                                class="fas fa-save me-2"></i> Update Settings</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Leave Request Section -->
+        <div class="card border-0 shadow-sm rounded-4 mb-4">
+            <div class="card-header bg-white border-0 py-3">
+                <h5 class="fw-bold mb-0"><i class="fas fa-plane-departure me-2 text-warning"></i>Apply for Time Off /
+                    Leave</h5>
+            </div>
+            <div class="card-body p-4">
+                <form method="post" action="{% url 'apply_leave' %}">
+                    {% csrf_token %}
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold small text-muted text-uppercase">Start Date</label>
+                            <input type="date" class="form-control shadow-sm" name="start_date" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold small text-muted text-uppercase">End Date</label>
+                            <input type="date" class="form-control shadow-sm" name="end_date" required>
+                        </div>
+                        <div class="col-md-12">
+                            <label class="form-label fw-bold small text-muted text-uppercase">Reason for Leave
+                                Request</label>
+                            <textarea class="form-control shadow-sm" name="reason" rows="3"
+                                placeholder="Please provide brief details." required></textarea>
+                        </div>
+                    </div>
+                    <div class="mt-4 text-end">
+                        <button type="submit"
+                            class="btn btn-warning rounded-pill px-5 py-2 text-white shadow-sm fw-bold"><i
+                                class="fas fa-paper-plane me-2"></i> Submit Leave Request</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+{% endblock %}

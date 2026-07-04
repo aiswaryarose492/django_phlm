@@ -1,0 +1,378 @@
+{% extends 'core/base.html' %}
+{% load custom_filters %}
+
+{% block title %}Manage Wards{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="fw-bold"><i class="fas fa-hospital-alt me-2 text-primary"></i>Ward Management</h2>
+            <p class="text-muted mb-0">Manage hospital wards, bed availability, and nurse assignments</p>
+        </div>
+        <div>
+            <button class="btn btn-primary rounded-pill shadow-sm" data-bs-toggle="modal"
+                data-bs-target="#addWardModal">
+                <i class="fas fa-plus me-2"></i>Add Ward
+            </button>
+            <a href="{% url 'hospital_dashboard' %}" class="btn btn-outline-secondary rounded-pill ms-2">
+                <i class="fas fa-arrow-left me-1"></i>Back
+            </a>
+        </div>
+    </div>
+
+    <!-- Stats Cards -->
+    <div class="row g-4 mb-4">
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm rounded-4 bg-primary text-white">
+                <div class="card-body p-4">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-shrink-0">
+                            <i class="fas fa-hospital fa-2x opacity-75"></i>
+                        </div>
+                        <div class="flex-grow-1 ms-3">
+                            <h6 class="mb-0">Total Wards</h6>
+                            <h3 class="fw-bold mb-0">{{ wards.count }}</h3>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm rounded-4 bg-success text-white">
+                <div class="card-body p-4">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-shrink-0">
+                            <i class="fas fa-bed fa-2x opacity-75"></i>
+                        </div>
+                        <div class="flex-grow-1 ms-3">
+                            <h6 class="mb-0">Total Beds</h6>
+                            <h3 class="fw-bold mb-0">{{ wards|sum_beds }}</h3>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm rounded-4 bg-warning text-dark">
+                <div class="card-body p-4">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-shrink-0">
+                            <i class="fas fa-procedures fa-2x opacity-75"></i>
+                        </div>
+                        <div class="flex-grow-1 ms-3">
+                            <h6 class="mb-0">Occupied</h6>
+                            <h3 class="fw-bold mb-0">{{ wards|sum_occupied }}</h3>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm rounded-4 bg-info text-white">
+                <div class="card-body p-4">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-shrink-0">
+                            <i class="fas fa-door-open fa-2x opacity-75"></i>
+                        </div>
+                        <div class="flex-grow-1 ms-3">
+                            <h6 class="mb-0">Available</h6>
+                            <h3 class="fw-bold mb-0">{{ wards|sum_available }}</h3>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Wards Table -->
+    <div class="card border-0 shadow-sm rounded-4">
+        <div class="card-header bg-white border-0 py-3">
+            <h5 class="fw-bold mb-0">Ward List</h5>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="bg-light">
+                        <tr>
+                            <th class="py-3 ps-4">Ward</th>
+                            <th class="py-3">Type</th>
+                            <th class="py-3">Beds</th>
+                            <th class="py-3">Occupancy</th>
+                            <th class="py-3">Assigned Nurses</th>
+                            <th class="py-3 pe-4 text-end">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for ward in wards %}
+                        <tr>
+                            <td class="ps-4">
+                                <div class="fw-bold">{{ ward.ward_number }}</div>
+                                <small class="text-muted">Floor {{ ward.floor }}</small>
+                            </td>
+                            <td>
+                                <span class="badge bg-primary bg-opacity-10 text-primary rounded-pill">
+                                    {{ ward.ward_type }}
+                                </span>
+                            </td>
+                            <td>
+                                <span class="badge {% if ward.available_beds > 0 %}bg-success{% else %}bg-danger{% endif %}">
+                                    {{ ward.available_beds }}/{{ ward.total_beds }}
+                                </span>
+                            </td>
+                            <td>
+                                <div class="progress" style="height: 8px; width: 80px;">
+                                    <div class="progress-bar {% if ward.occupancy_rate > 90 %}bg-danger{% elif ward.occupancy_rate > 70 %}bg-warning{% else %}bg-success{% endif %}"
+                                        role="progressbar" style="width: {{ ward.occupancy_rate }}%">
+                                    </div>
+                                </div>
+                                <small class="text-muted">{{ ward.occupancy_rate|floatformat:1 }}%</small>
+                            </td>
+                            <td>
+                                {% with ward_nurses=ward.nurses.all %}
+                                {% if ward_nurses %}
+                                <div class="d-flex flex-wrap gap-1">
+                                    {% for nurse in ward_nurses %}
+                                    <span class="badge bg-info bg-opacity-10 text-info">
+                                        <i class="fas fa-user-nurse me-1"></i>{{ nurse.user.get_full_name }}
+                                    </span>
+                                    {% endfor %}
+                                </div>
+                                <small class="text-muted">{{ ward_nurses.count }}/4 nurses</small>
+                                {% else %}
+                                <span class="text-muted small"><i class="fas fa-exclamation-circle me-1"></i>No nurses assigned</span>
+                                {% endif %}
+                                {% endwith %}
+                            </td>
+                            <td class="pe-4 text-end">
+                                <button class="btn btn-sm btn-outline-info rounded-pill me-1"
+                                    onclick="openAssignNursesModal({{ ward.id }}, '{{ ward.ward_number }}')"
+                                    title="Assign Nurses">
+                                    <i class="fas fa-user-nurse"></i>
+                                </button>
+                                <button class="btn btn-sm btn-outline-primary rounded-pill me-1"
+                                    onclick="editWard({{ ward.id }}, '{{ ward.ward_number }}', '{{ ward.ward_type }}', '{{ ward.floor }}', {{ ward.total_beds }})">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button class="btn btn-sm btn-outline-danger rounded-pill"
+                                    onclick="deleteWard({{ ward.id }}, '{{ ward.ward_number }}')">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="6" class="text-center py-4 text-muted">
+                                <i class="fas fa-hospital-alt fa-3x mb-3 opacity-25"></i>
+                                <p>No wards configured yet. Add your first ward to get started.</p>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Ward Modal -->
+<div class="modal fade" id="addWardModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-4">
+            <div class="modal-header border-0">
+                <h5 class="modal-title fw-bold">Add New Ward</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="post" action="{% url 'manage_wards' %}">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="add">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Ward Number</label>
+                        <input type="text" name="ward_number" class="form-control" placeholder="e.g., Ward-A1" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Ward Type</label>
+                        <select name="ward_type" class="form-select">
+                            {% for type_code, type_name in ward_types %}
+                            <option value="{{ type_code }}">{{ type_name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Floor</label>
+                        <input type="text" name="floor" class="form-control" placeholder="e.g., 1" value="1">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Total Beds</label>
+                        <input type="number" name="total_beds" class="form-control" value="10" min="1">
+                    </div>
+                </div>
+                <div class="modal-footer border-0">
+                    <button type="button" class="btn btn-outline-secondary rounded-pill"
+                        data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary rounded-pill">Add Ward</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Ward Modal -->
+<div class="modal fade" id="editWardModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-4">
+            <div class="modal-header border-0">
+                <h5 class="modal-title fw-bold">Edit Ward</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="post" action="{% url 'manage_wards' %}">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="edit">
+                <input type="hidden" name="ward_id" id="edit_ward_id">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Ward Number</label>
+                        <input type="text" name="ward_number" id="edit_ward_number" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Ward Type</label>
+                        <select name="ward_type" id="edit_ward_type" class="form-select">
+                            {% for type_code, type_name in ward_types %}
+                            <option value="{{ type_code }}">{{ type_name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Floor</label>
+                        <input type="text" name="floor" id="edit_floor" class="form-control">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Total Beds</label>
+                        <input type="number" name="total_beds" id="edit_total_beds" class="form-control" min="1">
+                    </div>
+                </div>
+                <div class="modal-footer border-0">
+                    <button type="button" class="btn btn-outline-secondary rounded-pill"
+                        data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary rounded-pill">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Ward Modal -->
+<div class="modal fade" id="deleteWardModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-4">
+            <div class="modal-header border-0">
+                <h5 class="modal-title fw-bold text-danger">Delete Ward</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="post" action="{% url 'manage_wards' %}">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="delete">
+                <input type="hidden" name="ward_id" id="delete_ward_id">
+                <div class="modal-body">
+                    <p>Are you sure you want to delete ward <strong id="delete_ward_number_display"></strong>?</p>
+                    <p class="text-danger small">This action cannot be undone. Make sure no patients are currently
+                        admitted to this ward.</p>
+                </div>
+                <div class="modal-footer border-0">
+                    <button type="button" class="btn btn-outline-secondary rounded-pill"
+                        data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-danger rounded-pill">Delete Ward</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Assign Nurses Modal -->
+<div class="modal fade" id="assignNursesModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-4">
+            <div class="modal-header border-0">
+                <h5 class="modal-title fw-bold"><i class="fas fa-user-nurse text-info me-2"></i>Assign Nurses to <span id="assignNursesWardName"></span></h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="post" action="{% url 'manage_wards' %}">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="assign_nurses">
+                <input type="hidden" name="ward_id" id="assign_nurses_ward_id">
+                <div class="modal-body">
+                    <p class="text-muted small mb-3">Select up to 4 nurses to assign to this ward. They will be automatically assigned to patients admitted here.</p>
+                    <div class="row g-2">
+                        {% for nurse in available_nurses %}
+                        <div class="col-md-6">
+                            <div class="form-check border rounded-3 p-2">
+                                <input class="form-check-input" type="checkbox" name="nurse_ids" value="{{ nurse.id }}" id="nurse_{{ nurse.id }}">
+                                <label class="form-check-label w-100" for="nurse_{{ nurse.id }}">
+                                    <div class="fw-bold small">{{ nurse.user.get_full_name }}</div>
+                                    <div class="text-muted" style="font-size: 0.75rem;">{{ nurse.role }}</div>
+                                </label>
+                            </div>
+                        </div>
+                        {% empty %}
+                        <div class="col-12 text-center text-muted py-3">
+                            <i class="fas fa-exclamation-circle me-1"></i>No nurses available. Add staff members first.
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                <div class="modal-footer border-0">
+                    <button type="button" class="btn btn-outline-secondary rounded-pill" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-info rounded-pill text-white">
+                        <i class="fas fa-save me-1"></i>Save Assignment
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    function editWard(id, number, type, floor, beds) {
+        document.getElementById('edit_ward_id').value = id;
+        document.getElementById('edit_ward_number').value = number;
+        document.getElementById('edit_ward_type').value = type;
+        document.getElementById('edit_floor').value = floor;
+        document.getElementById('edit_total_beds').value = beds;
+        new bootstrap.Modal(document.getElementById('editWardModal')).show();
+    }
+
+    function deleteWard(id, number) {
+        document.getElementById('delete_ward_id').value = id;
+        document.getElementById('delete_ward_number_display').textContent = number;
+        new bootstrap.Modal(document.getElementById('deleteWardModal')).show();
+    }
+
+    function openAssignNursesModal(wardId, wardNumber) {
+        document.getElementById('assign_nurses_ward_id').value = wardId;
+        document.getElementById('assignNursesWardName').textContent = wardNumber;
+
+        // Reset all checkboxes
+        document.querySelectorAll('#assignNursesModal input[type="checkbox"]').forEach(cb => {
+            cb.checked = false;
+        });
+
+        // Load currently assigned nurses via data attribute
+        const assignedNurses = document.querySelectorAll(`[data-ward-nurses="${wardId}"]`);
+        
+        // Enforce max 4 selection
+        const checkboxes = document.querySelectorAll('#assignNursesModal input[type="checkbox"]');
+        checkboxes.forEach(cb => {
+            cb.addEventListener('change', function() {
+                const checked = document.querySelectorAll('#assignNursesModal input[type="checkbox"]:checked');
+                if (checked.length > 4) {
+                    this.checked = false;
+                    alert('You can assign a maximum of 4 nurses per ward.');
+                }
+            });
+        });
+
+        new bootstrap.Modal(document.getElementById('assignNursesModal')).show();
+    }
+</script>
+{% endblock %}

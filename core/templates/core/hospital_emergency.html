@@ -1,0 +1,281 @@
+{% extends 'core/base.html' %}
+
+{% block title %}Emergency - {{ hospital.name }}{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="d-flex align-items-center justify-content-between mb-4">
+        <div>
+            <h2 class="fw-bold text-danger"><i class="fas fa-ambulance me-2"></i>Emergency Department</h2>
+            <p class="text-muted">Active Cases & History</p>
+        </div>
+        <div>
+            <button class="btn btn-danger rounded-pill shadow-sm me-2" data-bs-toggle="modal"
+                data-bs-target="#emergencyModal">
+                <i class="fas fa-plus me-2"></i>Report New Case
+            </button>
+            <a href="{% url 'hospital_dashboard' %}" class="btn btn-outline-secondary rounded-pill">
+                <i class="fas fa-arrow-left me-2"></i>Back to Dashboard
+            </a>
+        </div>
+    </div>
+
+    <!-- Active Cases -->
+    <h5 class="fw-bold mb-3 border-start border-danger border-5 ps-3 py-1">Active Cases</h5>
+    <div class="row g-4 mb-5">
+        {% for case in emergency_cases %}
+        {% if case.status != 'Resolved' %}
+        <div class="col-md-6 col-lg-4">
+            <div class="card border-0 shadow-sm h-100 rounded-4">
+                <div
+                    class="card-header border-0 rounded-top-4 py-3 d-flex justify-content-between align-items-center {% if case.severity == 'Critical' %}bg-danger text-white{% elif case.severity == 'Moderate' %}bg-warning text-dark{% else %}bg-info text-dark{% endif %}">
+                    <span class="badge bg-dark bg-opacity-25">{{ case.status }}</span>
+                    <small class="fw-bold">{{ case.created_at|timesince }} ago</small>
+                </div>
+                <div class="card-body">
+                    <h5 class="fw-bold mb-2">{{ case.patient_name }}</h5>
+                    <p class="text-muted small mb-3">{{ case.symptoms }}</p>
+
+                    <div class="d-flex align-items-center justify-content-between mb-3">
+                        <small class="text-secondary fw-bold">Assigned to:</small>
+                        {% if case.assigned_to %}
+                        <span class="badge bg-primary rounded-pill"><i class="fas fa-user-md me-1"></i>Dr. {{
+                            case.assigned_to.first_name }} {{ case.assigned_to.last_name }}</span>
+                        {% else %}
+                        <span class="badge bg-danger rounded-pill">Unassigned</span>
+                        {% endif %}
+                    </div>
+
+                    <div class="d-grid gap-2">
+                        {% if case.status != 'Resolved' %}
+                        <div class="d-flex gap-2">
+                            <a href="{% url 'resolve_emergency_case' case.id %}"
+                                class="btn btn-outline-success btn-sm rounded-pill flex-grow-1">
+                                <i class="fas fa-check-circle me-1"></i>Mark Resolved
+                            </a>
+                            <a href="{% url 'delete_emergency_case' case.id %}"
+                                class="btn btn-outline-danger btn-sm rounded-pill"
+                                onclick="return confirm('Are you sure you want to delete this case?');">
+                                <i class="fas fa-trash"></i>
+                            </a>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+        {% empty %}
+        <div class="col-12">
+            <div class="alert alert-success border-0 shadow-sm rounded-4 text-center py-4">
+                <i class="fas fa-check-circle fa-2x mb-3"></i>
+                <h5 class="fw-bold">No Active Emergency Cases</h5>
+                <p class="mb-0">The emergency department is currently clear.</p>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Resolved/History -->
+    <h5 class="fw-bold mb-3 border-start border-secondary border-5 ps-3 py-1 text-muted">Case History</h5>
+    <div class="card border-0 shadow-sm rounded-4">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0 align-middle">
+                    <thead class="bg-light">
+                        <tr>
+                            <th class="py-3 ps-4 border-0 rounded-start-4">Date/Time</th>
+                            <th class="py-3 border-0">Patient</th>
+                            <th class="py-3 border-0">Severity</th>
+                            <th class="py-3 border-0">Symptoms</th>
+                            <th class="py-3 border-0">Doctor</th>
+                            <th class="py-3 pe-4 border-0 rounded-end-4 text-end">Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for case in emergency_cases %}
+                        {% if case.status == 'Resolved' %}
+                        <tr>
+                            <td class="ps-4 text-muted small">{{ case.created_at|date:"M d, Y H:i" }}</td>
+                            <td class="fw-bold">{{ case.patient_name }}</td>
+                            <td>
+                                <span
+                                    class="badge rounded-pill {% if case.severity == 'Critical' %}bg-danger{% elif case.severity == 'Moderate' %}bg-warning text-dark{% else %}bg-info text-dark{% endif %}">
+                                    {{ case.severity }}
+                                </span>
+                            </td>
+                            <td>{{ case.symptoms|truncatechars:30 }}</td>
+                            <td>
+                                {% if case.assigned_to %}
+                                <small>Dr. {{ case.assigned_to.get_full_name }}</small>
+                                {% else %}
+                                <small class="text-muted">-</small>
+                                {% endif %}
+                            </td>
+                            <td class="pe-4 text-end"><span
+                                    class="badge bg-success bg-opacity-10 text-success rounded-pill">Resolved</span>
+                            </td>
+                        </tr>
+                        {% endif %}
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Enhanced Emergency Reporting Modal -->
+<div class='modal fade' id='emergencyModal' tabindex='-1' aria-hidden='true'>
+    <div class='modal-dialog modal-lg modal-dialog-centered'>
+        <div class='modal-content border-0 shadow-lg rounded-4'>
+            <div class='modal-header border-0 bg-danger text-white'>
+                <h5 class='modal-title fw-bold'><i class='fas fa-ambulance me-2'></i>Report Enhanced Emergency</h5>
+                <button type='button' class='btn-close btn-close-white' data-bs-dismiss='modal'
+                    aria-label='Close'></button>
+            </div>
+            <div class='modal-body p-4'>
+                <form method='post' action="{% url 'create_enhanced_emergency' %}">
+                    {% csrf_token %}
+                    <div class="row g-3">
+                        <div class='col-md-6'>
+                            <label class='form-label small fw-bold'>Patient ID (if registered)</label>
+                            <input type='text' name='patient_id' class='form-control rounded-pill'
+                                placeholder='Enter patient ID or leave blank'>
+                        </div>
+                        <div class='col-md-6'>
+                            <label class='form-label small fw-bold'>Patient Name *</label>
+                            <input type='text' name='patient_name' class='form-control rounded-pill'
+                                placeholder='Patient name' required>
+                        </div>
+                    </div>
+
+                    <div class="row g-3 mt-1">
+                        <div class='col-md-6'>
+                            <label class='form-label small fw-bold'>Emergency Type *</label>
+                            <select name='emergency_type' class='form-select rounded-pill' required>
+                                <option value='General'>General</option>
+                                <option value='Accident'>Accident (Auto-assigns Orthopedic)</option>
+                                <option value='Heart Attack'>Heart Attack (Auto-assigns Cardiologist)</option>
+                                <option value='Organ Transplant'>Organ Transplant (Auto-assigns Transplant Specialist)
+                                </option>
+                                <option value='Stroke'>Stroke (Auto-assigns Neurologist)</option>
+                            </select>
+
+                        </div>
+                        <div class='col-md-6'>
+                            <label class='form-label small fw-bold'>Severity</label>
+                            <select name='severity' class='form-select rounded-pill'>
+                                <option value='Critical'>Critical</option>
+                                <option value='Moderate'>Moderate</option>
+                                <option value='Mild'>Mild</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="row g-3 mt-1">
+                        <div class='col-md-6'>
+                            <label class='form-label small fw-bold'>Ward/Room Assignment</label>
+                            <select name='ward' class='form-select rounded-pill'>
+                                <option value=''>-- Select Ward --</option>
+                                {% for ward in hospital.wards.all %}
+                                {% if ward.available_beds > 0 %}
+                                <option value='{{ ward.id }}'>{{ ward.ward_number }} ({{ ward.available_beds }} beds
+                                    available)</option>
+                                {% endif %}
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class='col-md-6'>
+                            <label class='form-label small fw-bold'>Room Number</label>
+                            <input type='text' name='room_number' class='form-control rounded-pill'
+                                placeholder='e.g., ICU-101'>
+                        </div>
+                    </div>
+
+                    <div class='mb-3 mt-3'>
+                        <label class='form-label small fw-bold'>Symptoms/Condition *</label>
+                        <textarea name='symptoms' class='form-control rounded-4' rows='3'
+                            placeholder='Describe condition in detail...' required></textarea>
+                    </div>
+
+
+
+                    <div class='d-grid'>
+                        <button type='submit' class='btn btn-danger rounded-pill py-2'>
+                            <i class='fas fa-exclamation-circle me-2'></i>Declare Emergency & Trigger Alarm
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Persistent Alarm Banner -->
+<div id="alarmBanner" class="position-fixed top-0 start-0 end-0 bg-danger text-white py-2"
+    style="display: none; z-index: 9999;">
+    <div class="container d-flex align-items-center justify-content-between">
+        <div class="d-flex align-items-center">
+            <i class="fas fa-bell fa-spin me-3 fa-lg"></i>
+            <div>
+                <strong id="alarmTitle">EMERGENCY ALARM ACTIVE</strong>
+                <span id="alarmMessage" class="ms-3">-</span>
+            </div>
+        </div>
+        <button id="acknowledgeAlarmBtn" class="btn btn-light btn-sm rounded-pill">
+            <i class="fas fa-check me-2"></i>Acknowledge
+        </button>
+    </div>
+</div>
+
+<script>
+    // Poll for active alarms
+    function checkActiveAlarms() {
+        $.ajax({
+            url: '{% url "get_active_alarms" %}',
+            type: 'GET',
+            success: function (response) {
+                if (response.alarms && response.alarms.length > 0) {
+                    const alarm = response.alarms[0]; // Show first active alarm
+                    $('#alarmTitle').text(alarm.type + ' ALARM: ' + alarm.title);
+                    $('#alarmMessage').text(alarm.message);
+                    $('#alarmBanner').slideDown();
+
+                    // Play alarm sound (if browser allows)
+                    // const audio = new Audio('/static/sounds/alarm.mp3');
+                    // audio.play().catch(e => console.log('Audio play failed'));
+
+                    // Store alarm ID for acknowledgment
+                    $('#acknowledgeAlarmBtn').data('alarm-id', alarm.id);
+                    $('#acknowledgeAlarmBtn').toggle(alarm.can_acknowledge);
+                } else {
+                    $('#alarmBanner').slideUp();
+                }
+            }
+        });
+    }
+
+    // Check alarms every 5 seconds
+    setInterval(checkActiveAlarms, 5000);
+    checkActiveAlarms(); // Initial check
+
+    // Acknowledge alarm
+    $('#acknowledgeAlarmBtn').click(function () {
+        const alarmId = $(this).data('alarm-id');
+        if (!alarmId) return;
+
+        $.ajax({
+            url: '/emergency/alarm/acknowledge/' + alarmId + '/',
+            type: 'POST',
+            data: { csrfmiddlewaretoken: '{{ csrf_token }}' },
+            success: function (response) {
+                if (response.success) {
+                    $('#alarmBanner').slideUp();
+                    checkActiveAlarms(); // Refresh
+                }
+            }
+        });
+    });
+</script>
+{% endblock %}

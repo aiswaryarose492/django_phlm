@@ -1,0 +1,102 @@
+{% extends 'core/base.html' %}
+
+{% block title %}Discharge Patient - {{ admission.patient.user.get_full_name }}{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card border-0 shadow-sm rounded-4">
+                <div class="card-header bg-success text-white border-0 rounded-top-4 py-4">
+                    <h4 class="fw-bold mb-0">
+                        <i class="fas fa-sign-out-alt me-2"></i>Discharge Patient
+                    </h4>
+                    <p class="mb-0 opacity-75">{{ admission.patient.user.get_full_name }} | Ward: {{
+                        admission.ward.ward_number }}</p>
+                </div>
+                <div class="card-body p-4">
+                    <form method="post">
+                        {% csrf_token %}
+
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">Admission Diagnosis</label>
+                                <textarea name="admission_diagnosis" class="form-control" rows="2"
+                                    required>{{ admission.admission_reason }}</textarea>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">Final Diagnosis</label>
+                                <textarea name="final_diagnosis" class="form-control" rows="2" required></textarea>
+                            </div>
+
+                            <div class="col-12">
+                                <label class="form-label fw-bold">Treatment Given</label>
+                                <textarea name="treatment_given" class="form-control" rows="3" required></textarea>
+                            </div>
+
+                            <div class="col-12">
+                                <label class="form-label fw-bold">Surgery/Procedures (if any)</label>
+                                <textarea name="surgery_procedures" class="form-control" rows="2"
+                                    placeholder="Leave blank if no surgery was performed"></textarea>
+                            </div>
+
+                            <div class="col-12">
+                                <label class="form-label fw-bold">Condition at Discharge *</label>
+                                <textarea name="condition_at_discharge" class="form-control" rows="2"
+                                    placeholder="Patient's condition at the time of discharge" required></textarea>
+                            </div>
+
+                            <div class="col-12">
+                                <label class="form-label fw-bold">Follow-up Instructions *</label>
+                                <textarea name="follow_up_instructions" class="form-control" rows="3"
+                                    placeholder="Instructions for follow-up care" required></textarea>
+                            </div>
+
+                            <div class="col-12">
+                                <label class="form-label fw-bold">Medications on Discharge *</label>
+                                <textarea name="medications_on_discharge" class="form-control" rows="3"
+                                    placeholder="List all medications prescribed at discharge" required></textarea>
+                            </div>
+
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">Activity Restrictions</label>
+                                <textarea name="activity_restrictions" class="form-control" rows="2"
+                                    placeholder="Any activity restrictions..."></textarea>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">Diet Instructions</label>
+                                <textarea name="diet_instructions" class="form-control" rows="2"
+                                    placeholder="Diet recommendations..."></textarea>
+                            </div>
+
+                            <div class="col-12">
+                                <label class="form-label fw-bold">Warning Signs (Seek immediate medical attention
+                                    if)</label>
+                                <textarea name="warning_signs" class="form-control" rows="2"
+                                    placeholder="List warning signs that require immediate attention"></textarea>
+                            </div>
+
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">Follow-up Date</label>
+                                <input type="date" name="follow_up_date" class="form-control">
+                            </div>
+                        </div>
+
+                        <hr class="my-4">
+
+                        <div class="d-flex justify-content-between">
+                            <a href="{% url 'view_admission_details' admission.id %}"
+                                class="btn btn-outline-secondary rounded-pill">
+                                <i class="fas fa-arrow-left me-2"></i>Cancel
+                            </a>
+                            <button type="submit" class="btn btn-success rounded-pill px-4">
+                                <i class="fas fa-check-circle me-2"></i>Complete Discharge
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

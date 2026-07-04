@@ -1,0 +1,217 @@
+{% extends 'core/base.html' %}
+
+{% block title %}Book Appointment - PHLMS{% endblock %}
+
+{% block extra_css %}
+<style>
+    .appointment-container {
+        background: white;
+        border-radius: 24px;
+        box-shadow: 0 15px 50px rgba(0, 0, 0, 0.08);
+        overflow: hidden;
+    }
+
+    .doctor-card-select {
+        cursor: pointer;
+        transition: all 0.3s ease;
+        border: 2px solid transparent;
+    }
+
+    .doctor-card-select:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+    }
+
+    .doctor-radio {
+        display: none;
+    }
+
+    .doctor-radio:checked+.doctor-card-select {
+        border-color: #0891b2;
+        background-color: rgba(8, 145, 178, 0.05);
+        box-shadow: 0 5px 20px rgba(8, 145, 178, 0.15);
+    }
+
+    .sidebar-decor {
+        background: linear-gradient(135deg, #0891b2 0%, #6366f1 100%);
+        color: white;
+        padding: 40px;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .sidebar-decor::before {
+        content: '';
+        position: absolute;
+        top: -50%;
+        right: -30%;
+        width: 300px;
+        height: 300px;
+        background: rgba(255,255,255,0.1);
+        border-radius: 50%;
+    }
+
+    .doctor-avatar {
+        width: 70px;
+        height: 70px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 3px solid white;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+    }
+
+    .form-control {
+        border-radius: 12px;
+        padding: 14px 18px;
+        border: 2px solid #e2e8f0;
+        background-color: #f8fafc;
+        transition: all 0.3s ease;
+    }
+
+    .form-control:focus {
+        border-color: #0891b2;
+        box-shadow: 0 0 0 4px rgba(8, 145, 178, 0.15);
+        background-color: white;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-12">
+        <!-- Featured Doctors Section -->
+        <div class="mb-5">
+            <h4 class="fw-bold mb-4 text-center">Select a Doctor</h4>
+            <p class="text-center text-muted mb-4">Choose from our available specialists based on department and availability</p>
+            <div class="row g-4 justify-content-center">
+                {% for doctor in doctors %}
+                <div class="col-md-4 col-lg-3">
+                    <div class="card border-0 text-center h-100 doctor-card-select" style="box-shadow: 0 8px 25px rgba(0,0,0,0.08);">
+                        {% if doctor.image %}
+                        <img src="{{ doctor.image.url }}" class="card-img-top" alt="{{ doctor }}" style="height: 200px; object-fit: cover;">
+                        {% else %}
+                        <img src="https://ui-avatars.com/api/?name={{ doctor.user.get_full_name|urlencode }}&background=0891b2&color=fff&size=200" class="card-img-top" alt="{{ doctor }}" style="height: 200px; object-fit: cover;">
+                        {% endif %}
+                        <div class="card-body">
+                            <h5 class="fw-bold mb-1">Dr. {{ doctor.user.get_full_name }}</h5>
+                            <p class="text-primary small mb-1">{{ doctor.department }}</p>
+                            <p class="text-muted small mb-2">{{ doctor.specialty }}</p>
+                            {% if doctor.experience %}
+                            <p class="text-muted small mb-2"><i class="fas fa-briefcase me-1"></i>{{ doctor.experience }} years experience</p>
+                            {% endif %}
+                            <div class="mb-2">
+                                {% if doctor.available %}
+                                <span class="badge bg-success">Available</span>
+                                {% else %}
+                                <span class="badge bg-warning">On Leave</span>
+                                {% endif %}
+                            </div>
+                            {% if doctor.available_days %}
+                            <p class="text-muted small mb-1"><i class="fas fa-calendar-week me-1"></i>{{ doctor.available_days }}</p>
+                            {% endif %}
+                            {% if doctor.available_start_time and doctor.available_end_time %}
+                            <p class="text-muted small"><i class="fas fa-clock me-1"></i>{{ doctor.available_start_time }} - {{ doctor.available_end_time }}</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                {% empty %}
+                <div class="col-12 text-center">
+                    <p class="text-muted">No doctors available at the moment. Please try again later.</p>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <div class="appointment-container">
+            <div class="row g-0">
+                <!-- Left Sidebar -->
+                <div class="col-md-4 d-none d-md-block">
+                    <div class="sidebar-decor">
+                        <h2 class="fw-bold mb-4">Book Your Visit</h2>
+                        <p class="opacity-75 mb-4">Schedule a consultation with our top specialists. We are here to help you stay healthy.</p>
+
+                        <div class="d-flex align-items-center mb-3">
+                            <i class="fas fa-check-circle me-3 fa-lg opacity-75"></i>
+                            <span>Expert Doctors</span>
+                        </div>
+                        <div class="d-flex align-items-center mb-3">
+                            <i class="fas fa-check-circle me-3 fa-lg opacity-75"></i>
+                            <span>Minimal Wait Time</span>
+                        </div>
+                        <div class="d-flex align-items-center mb-3">
+                            <i class="fas fa-check-circle me-3 fa-lg opacity-75"></i>
+                            <span>Safe Environment</span>
+                        </div>
+                        <div class="d-flex align-items-center">
+                            <i class="fas fa-check-circle me-3 fa-lg opacity-75"></i>
+                            <span>24/7 Support</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right Form -->
+                <div class="col-md-8 p-5">
+                    <h3 class="fw-bold text-primary mb-4">Book an Appointment</h3>
+
+                    <form method="post">
+                        {% csrf_token %}
+
+                        <div class="mb-4">
+                            <label class="form-label fw-bold">Select Doctor</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light border-end-0"><i class="fas fa-user-md text-muted"></i></span>
+                                {{ form.doctor }}
+                            </div>
+                            <small class="text-muted">Choose from available specialists at your hospital.</small>
+                        </div>
+
+                        <div class="row g-3 mb-4">
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">Date</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light border-end-0"><i class="fas fa-calendar text-muted"></i></span>
+                                    {{ form.date }}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">Time</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light border-end-0"><i class="fas fa-clock text-muted"></i></span>
+                                    {{ form.time }}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="form-label fw-bold">Symptoms / Reason</label>
+                            {{ form.symptoms }}
+                            <div class="form-text">Briefly describe how you are feeling.</div>
+                        </div>
+
+                        <div class="d-flex justify-content-between align-items-center mt-5">
+                            <a href="{% url 'patient_dashboard' %}" class="text-muted text-decoration-none">Cancel</a>
+                            <button type="submit" class="btn btn-primary rounded-pill px-5 py-3 fw-bold shadow">
+                                Confirm Appointment <i class="fas fa-arrow-right ms-2"></i>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const inputs = document.querySelectorAll('input, select, textarea');
+        inputs.forEach(input => {
+            input.classList.add('form-control');
+        });
+    });
+</script>
+{% endblock %}

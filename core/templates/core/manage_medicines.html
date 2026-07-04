@@ -1,0 +1,386 @@
+{% extends 'core/base.html' %}
+
+{% block title %}Medicine Database - Pharmacy{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="d-flex align-items-center justify-content-between mb-4">
+        <div>
+            <h2 class="fw-bold"><i class="fas fa-pills me-2 text-primary"></i>Medicine Database</h2>
+            <p class="text-muted">Manage hospital pharmacy inventory</p>
+        </div>
+        <div>
+            <button class="btn btn-primary rounded-pill shadow-sm" data-bs-toggle="modal"
+                data-bs-target="#addMedicineModal">
+                <i class="fas fa-plus me-2"></i>Add Medicine
+            </button>
+            <a href="{% url 'pharmacy_dashboard' %}" class="btn btn-outline-secondary rounded-pill ms-2">
+                <i class="fas fa-arrow-left me-2"></i>Back
+            </a>
+        </div>
+    </div>
+
+    <!-- Low Stock Alert -->
+    {% if low_stock %}
+    <div class="alert alert-warning border-0 shadow-sm rounded-4 mb-4">
+        <h6 class="fw-bold mb-2"><i class="fas fa-exclamation-triangle me-2"></i>Low Stock Alert</h6>
+        <div class="row g-2">
+            {% for med in low_stock|slice:":5" %}
+            <div class="col-md-4">
+                <div class="d-flex align-items-center bg-white rounded-3 p-2">
+                    <i class="fas fa-pills text-warning me-2"></i>
+                    <div>
+                        <small class="fw-bold d-block">{{ med.name }}</small>
+                        <small class="text-danger">Only {{ med.stock_quantity }} left</small>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Stats Cards -->
+    <div class="row g-4 mb-4">
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm rounded-4 bg-primary text-white">
+                <div class="card-body p-4">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-shrink-0">
+                            <i class="fas fa-pills fa-2x opacity-75"></i>
+                        </div>
+                        <div class="flex-grow-1 ms-3">
+                            <h6 class="mb-0">Total Medicines</h6>
+                            <h3 class="fw-bold mb-0">{{ medicines.count }}</h3>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm rounded-4 bg-success text-white">
+                <div class="card-body p-4">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-shrink-0">
+                            <i class="fas fa-check-circle fa-2x opacity-75"></i>
+                        </div>
+                        <div class="flex-grow-1 ms-3">
+                            <h6 class="mb-0">In Stock</h6>
+                            <h3 class="fw-bold mb-0">{{ medicines|in_stock_count }}</h3>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm rounded-4 bg-warning text-dark">
+                <div class="card-body p-4">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-shrink-0">
+                            <i class="fas fa-exclamation-circle fa-2x opacity-75"></i>
+                        </div>
+                        <div class="flex-grow-1 ms-3">
+                            <h6 class="mb-0">Low Stock</h6>
+                            <h3 class="fw-bold mb-0">{{ low_stock.count }}</h3>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm rounded-4 bg-danger text-white">
+                <div class="card-body p-4">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-shrink-0">
+                            <i class="fas fa-times-circle fa-2x opacity-75"></i>
+                        </div>
+                        <div class="flex-grow-1 ms-3">
+                            <h6 class="mb-0">Out of Stock</h6>
+                            <h3 class="fw-bold mb-0">{{ medicines|out_of_stock_count }}</h3>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Medicines Table -->
+    <div class="card border-0 shadow-sm rounded-4">
+        <div class="card-header bg-white border-0 py-3">
+            <div class="row align-items-center">
+                <div class="col">
+                    <h5 class="fw-bold mb-0">Medicine Inventory</h5>
+                </div>
+                <div class="col-auto">
+                    <input type="text" id="medicineSearch" class="form-control rounded-pill"
+                        placeholder="Search medicines...">
+                </div>
+            </div>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0" id="medicinesTable">
+                    <thead class="bg-light">
+                        <tr>
+                            <th class="py-3 ps-4">Name</th>
+                            <th class="py-3">Type</th>
+                            <th class="py-3">Manufacturer</th>
+                            <th class="py-3">Stock</th>
+                            <th class="py-3">Unit Price</th>
+                            <th class="py-3">Status</th>
+                            <th class="py-3 pe-4 text-end">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for medicine in medicines %}
+                        <tr data-name="{{ medicine.name|lower }} {{ medicine.generic_name|lower }}">
+                            <td class="ps-4">
+                                <div class="fw-bold">{{ medicine.name }}</div>
+                                <small class="text-muted">{{ medicine.generic_name }}</small>
+                            </td>
+                            <td>
+                                <span class="badge bg-info bg-opacity-10 text-info rounded-pill">
+                                    {{ medicine.medicine_type }}
+                                </span>
+                            </td>
+                            <td>{{ medicine.manufacturer|default:"-" }}</td>
+                            <td>
+                                <span
+                                    class="badge {% if medicine.stock_quantity == 0 %}bg-danger{% elif medicine.is_low_stock %}bg-warning text-dark{% else %}bg-success{% endif %}">
+                                    {{ medicine.stock_quantity }}
+                                </span>
+                            </td>
+                            <td>₹{{ medicine.unit_price }}</td>
+                            <td>
+                                {% if medicine.is_available %}
+                                <span class="badge bg-success rounded-pill">Active</span>
+                                {% else %}
+                                <span class="badge bg-secondary rounded-pill">Inactive</span>
+                                {% endif %}
+                                {% if medicine.is_external %}
+                                <span class="badge bg-warning text-dark rounded-pill ms-1">External</span>
+                                {% endif %}
+                            </td>
+                            <td class="pe-4 text-end">
+                                <button class="btn btn-sm btn-outline-primary rounded-pill"
+                                    onclick="editMedicine({{ medicine.id }}, '{{ medicine.name|escapejs }}', '{{ medicine.generic_name|escapejs }}', '{{ medicine.medicine_type }}', '{{ medicine.manufacturer|escapejs }}', {{ medicine.stock_quantity }}, {{ medicine.reorder_level }}, {{ medicine.unit_price }}, {{ medicine.is_available|yesno:'true,false' }})">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button class="btn btn-sm btn-outline-danger rounded-pill"
+                                    onclick="deleteMedicine({{ medicine.id }}, '{{ medicine.name|escapejs }}')">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="7" class="text-center py-4 text-muted">
+                                <i class="fas fa-pills fa-3x mb-3 opacity-25"></i>
+                                <p>No medicines in database. Add medicines to get started.</p>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Medicine Modal -->
+<div class="modal fade" id="addMedicineModal" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-4">
+            <div class="modal-header border-0">
+                <h5 class="modal-title fw-bold">Add New Medicine</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="post" action="{% url 'manage_medicines' %}">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="add">
+                <div class="modal-body">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">Medicine Name *</label>
+                            <input type="text" name="name" class="form-control" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">Generic Name</label>
+                            <input type="text" name="generic_name" class="form-control">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">Type</label>
+                            <select name="medicine_type" class="form-select">
+                                {% for type_code, type_name in medicine_types %}
+                                <option value="{{ type_code }}">{{ type_name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">Manufacturer</label>
+                            <input type="text" name="manufacturer" class="form-control">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold">Stock Quantity</label>
+                            <input type="number" name="stock_quantity" class="form-control" value="0" min="0">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold">Reorder Level</label>
+                            <input type="number" name="reorder_level" class="form-control" value="10" min="0">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold">Unit Price (₹)</label>
+                            <input type="number" name="unit_price" class="form-control" value="0" step="0.01" min="0">
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label fw-bold">Description</label>
+                            <textarea name="description" class="form-control" rows="2"></textarea>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">Dosage Instructions</label>
+                            <textarea name="dosage_instructions" class="form-control" rows="2"></textarea>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">Side Effects</label>
+                            <textarea name="side_effects" class="form-control" rows="2"></textarea>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer border-0">
+                    <button type="button" class="btn btn-outline-secondary rounded-pill"
+                        data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary rounded-pill">Add Medicine</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Medicine Modal -->
+<div class="modal fade" id="editMedicineModal" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-4">
+            <div class="modal-header border-0">
+                <h5 class="modal-title fw-bold">Edit Medicine</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="post" action="{% url 'manage_medicines' %}">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="edit">
+                <input type="hidden" name="medicine_id" id="edit_medicine_id">
+                <div class="modal-body">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">Medicine Name *</label>
+                            <input type="text" name="name" id="edit_name" class="form-control" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">Generic Name</label>
+                            <input type="text" name="generic_name" id="edit_generic_name" class="form-control">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">Type</label>
+                            <select name="medicine_type" id="edit_medicine_type" class="form-select">
+                                {% for type_code, type_name in medicine_types %}
+                                <option value="{{ type_code }}">{{ type_name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">Manufacturer</label>
+                            <input type="text" name="manufacturer" id="edit_manufacturer" class="form-control">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold">Stock Quantity</label>
+                            <input type="number" name="stock_quantity" id="edit_stock_quantity" class="form-control"
+                                min="0">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold">Reorder Level</label>
+                            <input type="number" name="reorder_level" id="edit_reorder_level" class="form-control"
+                                min="0">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold">Unit Price (₹)</label>
+                            <input type="number" name="unit_price" id="edit_unit_price" class="form-control" step="0.01"
+                                min="0">
+                        </div>
+                        <div class="col-12">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="is_available"
+                                    id="edit_is_available">
+                                <label class="form-check-label fw-bold" for="edit_is_available">
+                                    Available for Prescription
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer border-0">
+                    <button type="button" class="btn btn-outline-secondary rounded-pill"
+                        data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary rounded-pill">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Medicine Modal -->
+<div class="modal fade" id="deleteMedicineModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-4">
+            <div class="modal-header border-0">
+                <h5 class="modal-title fw-bold text-danger">Delete Medicine</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="post" action="{% url 'manage_medicines' %}">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="delete">
+                <input type="hidden" name="medicine_id" id="delete_medicine_id">
+                <div class="modal-body">
+                    <p>Are you sure you want to delete <strong id="delete_medicine_name"></strong>?</p>
+                    <p class="text-danger small">This action cannot be undone.</p>
+                </div>
+                <div class="modal-footer border-0">
+                    <button type="button" class="btn btn-outline-secondary rounded-pill"
+                        data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-danger rounded-pill">Delete Medicine</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Search functionality
+    document.getElementById('medicineSearch').addEventListener('input', function () {
+        const search = this.value.toLowerCase();
+        const rows = document.querySelectorAll('#medicinesTable tbody tr');
+
+        rows.forEach(row => {
+            const name = row.getAttribute('data-name') || '';
+            row.style.display = name.includes(search) ? '' : 'none';
+        });
+    });
+
+    function editMedicine(id, name, genericName, type, manufacturer, stock, reorderLevel, price, isAvailable) {
+        document.getElementById('edit_medicine_id').value = id;
+        document.getElementById('edit_name').value = name;
+        document.getElementById('edit_generic_name').value = genericName;
+        document.getElementById('edit_medicine_type').value = type;
+        document.getElementById('edit_manufacturer').value = manufacturer;
+        document.getElementById('edit_stock_quantity').value = stock;
+        document.getElementById('edit_reorder_level').value = reorderLevel;
+        document.getElementById('edit_unit_price').value = price;
+        document.getElementById('edit_is_available').checked = isAvailable;
+        new bootstrap.Modal(document.getElementById('editMedicineModal')).show();
+    }
+
+    function deleteMedicine(id, name) {
+        document.getElementById('delete_medicine_id').value = id;
+        document.getElementById('delete_medicine_name').textContent = name;
+        new bootstrap.Modal(document.getElementById('deleteMedicineModal')).show();
+    }
+</script>
+{% endblock %}

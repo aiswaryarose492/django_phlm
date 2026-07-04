@@ -1,0 +1,1090 @@
+{% extends 'core/base.html' %}
+
+{% block title %}Doctor Dashboard - PHLMS{% endblock %}
+
+{% block extra_css %}
+<style>
+    :root {
+        --primary-teal: #0891b2;
+        --dark-teal: #0e7490;
+    }
+
+    .dashboard-header {
+        background: linear-gradient(135deg, var(--primary-teal), var(--dark-teal));
+        color: white;
+        padding: 25px;
+        border-radius: 20px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 30px;
+        box-shadow: 0 8px 25px rgba(8, 145, 178, 0.3);
+    }
+
+    .stats-card {
+        background: white;
+        border-radius: 18px;
+        padding: 22px;
+        display: flex;
+        align-items: center;
+        box-shadow: 0 5px 20px rgba(0, 0, 0, 0.06);
+        border-left: 5px solid transparent;
+        height: 100%;
+        transition: all 0.3s ease;
+    }
+
+    .stats-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+    }
+
+    .stats-icon {
+        width: 60px;
+        height: 60px;
+        border-radius: 16px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.6rem;
+        color: white;
+        margin-right: 18px;
+    }
+
+    .card-teal {
+        border-left-color: #0891b2;
+    }
+
+    .icon-teal {
+        background: linear-gradient(135deg, #0891b2, #0e7490);
+    }
+
+    .card-pink {
+        border-left-color: #ec4899;
+    }
+
+    .icon-pink {
+        background: linear-gradient(135deg, #ec4899, #be185d);
+    }
+
+    .card-blue {
+        border-left-color: #6366f1;
+    }
+
+    .icon-blue {
+        background: linear-gradient(135deg, #6366f1, #4f46e5);
+    }
+
+    .card-green {
+        border-left-color: #10b981;
+    }
+
+    .icon-green {
+        background: linear-gradient(135deg, #10b981, #059669);
+    }
+
+    .doctor-profile-card {
+        background: white;
+        border-radius: 18px;
+        padding: 25px;
+        box-shadow: 0 5px 20px rgba(0, 0, 0, 0.06);
+        margin-bottom: 30px;
+        border-top: 5px solid var(--primary-teal);
+    }
+
+    .section-title {
+        display: flex;
+        align-items: center;
+        font-weight: 700;
+        color: #0f172a;
+        margin-bottom: 20px;
+        font-size: 1.1rem;
+    }
+
+    .appointment-card {
+        background: white;
+        border-radius: 16px;
+        padding: 20px;
+        margin-bottom: 15px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.03);
+        border-left: 4px solid #3498db;
+    }
+
+    .report-card {
+        background: white;
+        border-radius: 15px;
+        padding: 15px;
+        margin-bottom: 10px;
+        border-left: 4px solid #9b59b6;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .badge-status {
+        padding: 5px 12px;
+        border-radius: 20px;
+        font-size: 0.8rem;
+    }
+
+    .bg-scheduled {
+        background: #3498db;
+        color: white;
+    }
+
+    .bg-completed {
+        background: #2ecc71;
+        color: white;
+    }
+
+    .shift-toggle-btn {
+        background: white;
+        color: var(--primary-teal);
+        border: 2px solid white;
+        font-weight: bold;
+        border-radius: 30px;
+        padding: 8px 20px;
+        text-decoration: none;
+        transition: 0.3s;
+    }
+
+    .shift-toggle-btn:hover {
+        background: rgba(255, 255, 255, 0.1);
+        color: white;
+    }
+
+    .btn-stop {
+        color: #e74c3c;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="dashboard-header">
+    <div class="d-flex align-items-center">
+        <i class="fas fa-user-md fa-2x me-3"></i>
+        <h3 class="mb-0 fw-bold">{{ doctor.user.last_name }}'s Dashboard</h3>
+    </div>
+    <div class="d-flex align-items-center">
+        <div class="me-4 text-end">
+            <small class="d-block opacity-75">Hours Worked Today</small>
+            <span class="fw-bold fs-5">{{ hours_worked }} hrs</span>
+        </div>
+        <button class="btn btn-light me-2" data-bs-toggle="modal" data-bs-target="#requestLabTestModal"
+            style="background: white; color: var(--primary-teal); border: none;">
+            <i class="fas fa-flask me-1"></i> Request Lab Test
+        </button>
+        <button class="btn btn-light me-2" data-bs-toggle="modal" data-bs-target="#addPrescriptionModal"
+            style="background: white; color: var(--primary-teal); border: none;">
+            <i class="fas fa-prescription me-1"></i> Add Prescription
+        </button>
+        <a href="{% url 'toggle_shift' %}" class="shift-toggle-btn {% if active_shift %}btn-stop{% endif %}">
+            {% if active_shift %}
+            <i class="fas fa-stop-circle me-1"></i> End Shift
+            {% else %}
+            <i class="fas fa-play-circle me-1"></i> Start Shift
+            {% endif %}
+        </a>
+    </div>
+</div>
+
+<!-- Stats Row -->
+<div class="row g-4 mb-4">
+    <div class="col-md-3">
+        <div class="stats-card card-teal">
+            <div class="stats-icon icon-teal"><i class="far fa-calendar-check"></i></div>
+            <div>
+                <div class="small text-muted">Today's Appointments</div>
+                <div class="fs-4 fw-bold">{{ today_appointments_count }}</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stats-card card-pink">
+            <div class="stats-icon icon-pink"><i class="fas fa-user-injured"></i></div>
+            <div>
+                <div class="small text-muted">Total Patients</div>
+                <div class="fs-4 fw-bold">{{ total_patients_count }}</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stats-card card-blue">
+            <div class="stats-icon icon-blue"><i class="far fa-file-alt"></i></div>
+            <div>
+                <div class="small text-muted">Pending Reports</div>
+                <div class="fs-4 fw-bold">{{ pending_reports_count }}</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stats-card card-green">
+            <div class="stats-icon icon-green"><i class="fas fa-stethoscope"></i></div>
+            <div>
+                <div class="small text-muted">Department</div>
+                <div class="fs-5 fw-bold">{{ doctor.department|default:doctor.specialty }}</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Leave Stats Card -->
+    <div class="col-md-3">
+        <div class="stats-card card-orange" style="border-left-color: #f0932b;">
+            <div class="stats-icon icon-orange" style="background: linear-gradient(135deg, #f0932b, #ffbe76);"><i
+                    class="fas fa-plane-departure"></i></div>
+            <div>
+                <div class="small text-muted">Leave Status</div>
+                <div class="fw-bold">
+                    {{ doctor.get_total_approved_leave_days }} / {{ doctor.hospital.max_leave_days }} Days
+                </div>
+                {% if doctor.get_salary_deduction > 0 %}
+                <small class="text-danger fw-bold d-block">-${{ doctor.get_salary_deduction }} Deduction</small>
+                {% else %}
+                <small class="text-success fw-bold d-block">No Deductions</small>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Profile Card -->
+<div class="doctor-profile-card">
+    <div class="row align-items-center">
+        <div class="col-auto">
+            <div class="bg-teal text-white rounded-circle d-flex align-items-center justify-content-center"
+                style="width: 60px; height: 60px; background: #1abc9c; font-size: 1.5rem;">
+                {{ doctor.user.first_name|make_list|first }}
+            </div>
+        </div>
+        <div class="col">
+            <h5 class="mb-0 fw-bold">Dr. {{ doctor.user.get_full_name }}</h5>
+            <small class="text-muted">{{ doctor.specialty }} • Doctor</small>
+        </div>
+        <div class="col text-end">
+            <small class="d-block text-muted">Hospital</small>
+            <span class="fw-bold">{{ doctor.hospital.name }}</span>
+        </div>
+        <div class="col text-end">
+            <small class="d-block text-muted">Email</small>
+            <span>{{ doctor.user.email }}</span>
+        </div>
+    </div>
+</div>
+
+<!-- Availability Management Section -->
+<div class="card border-0 shadow-sm rounded-4 mb-4">
+    <div class="card-header bg-white border-0 py-3">
+        <h5 class="fw-bold mb-0"><i class="fas fa-clock me-2 text-primary"></i>Manage Availability</h5>
+    </div>
+    <div class="card-body">
+        <form method="post" action="{% url 'update_doctor_availability' %}">
+            {% csrf_token %}
+            <div class="row g-3">
+                <div class="col-md-3">
+                    <label class="form-label fw-bold">Status</label>
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" id="available" name="available" {{ doctor.available|yesno:"checked," }}>
+                        <label class="form-check-label" for="available">Available for Appointments</label>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label fw-bold">Available Days</label>
+                    <input type="text" class="form-control" name="available_days" value="{{ doctor.available_days }}"
+                        placeholder="Monday,Tuesday,Wednesday,Thursday,Friday">
+                    <small class="text-muted">Enter days separated by commas (e.g., Monday,Tuesday,Wednesday)</small>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label fw-bold">Max Appointments/Day</label>
+                    <input type="number" class="form-control" name="max_appointments_per_day"
+                        value="{{ doctor.max_appointments_per_day|default:10 }}" min="1" max="50">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label fw-bold">Start Time</label>
+                    <input type="time" class="form-control" name="available_start_time"
+                        value="{{ doctor.available_start_time|default:'' }}">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label fw-bold">End Time</label>
+                    <input type="time" class="form-control" name="available_end_time"
+                        value="{{ doctor.available_end_time|default:'' }}">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label fw-bold">Break Start</label>
+                    <input type="time" class="form-control" name="break_start_time"
+                        value="{{ doctor.break_start_time|default:'' }}">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label fw-bold">Break End</label>
+                    <input type="time" class="form-control" name="break_end_time"
+                        value="{{ doctor.break_end_time|default:'' }}">
+                </div>
+                <div class="col-md-3 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary rounded-pill w-100">
+                        <i class="fas fa-save me-2"></i>Update Availability
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Apply for Leave Section -->
+<div class="card border-0 shadow-sm rounded-4 mb-4">
+    <div class="card-header bg-white border-0 py-3">
+        <h5 class="fw-bold mb-0"><i class="fas fa-plane-departure me-2 text-warning"></i>Apply for Leave</h5>
+    </div>
+    <div class="card-body">
+        <form method="post" action="{% url 'apply_leave' %}">
+            {% csrf_token %}
+            <div class="row g-3">
+                <div class="col-md-3">
+                    <label class="form-label fw-bold">Leave Type</label>
+                    <select name="leave_type" class="form-select" required>
+                        <option value="">Select type</option>
+                        <option value="Casual Leave">Casual Leave</option>
+                        <option value="Sick Leave">Sick Leave</option>
+                        <option value="Emergency Leave">Emergency Leave</option>
+                        <option value="Annual Leave">Annual Leave</option>
+                        <option value="Other">Other</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label fw-bold">Start Date</label>
+                    <input type="date" name="start_date" class="form-control" required>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label fw-bold">End Date</label>
+                    <input type="date" name="end_date" class="form-control" required>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label fw-bold">&nbsp;</label>
+                    <button type="submit" class="btn btn-warning w-100 rounded-pill">
+                        <i class="fas fa-paper-plane me-2"></i>Submit Request
+                    </button>
+                </div>
+                <div class="col-12">
+                    <label class="form-label fw-bold">Reason</label>
+                    <textarea name="reason" class="form-control" rows="2" placeholder="Enter reason for leave..."
+                        required></textarea>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-8">
+        <!-- Emergency Assignments -->
+        {% if emergency_cases %}
+        <div class="card border-0 shadow-sm rounded-4 mb-4 border-start border-5 border-danger">
+            <div class="card-header bg-white border-0 py-3">
+                <h5 class="fw-bold text-danger mb-0"><i class="fas fa-ambulance me-2"></i>Emergency Assignments</h5>
+            </div>
+            <div class="card-body">
+                <div class="row g-3">
+                    {% for case in emergency_cases %}
+                    <div class="col-md-6">
+                        <div class="p-3 bg-light rounded-3">
+                            <div class="d-flex justify-content-between mb-2">
+                                <span class="badge bg-danger">{{ case.severity }}</span>
+                                <small>{{ case.created_at|time:"H:i" }}</small>
+                            </div>
+                            <h6 class="fw-bold">{{ case.patient_name }}</h6>
+                            <p class="small text-muted mb-0">{{ case.symptoms }}</p>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Emergency Section -->
+        {% if emergency_cases %}
+        <div class="alert alert-danger shadow-sm border-0 rounded-4 mb-4">
+            <h5 class="alert-heading fw-bold"><i class="fas fa-ambulance me-2"></i> Active Emergency Cases</h5>
+            <div class="row g-3 mt-2">
+                {% for case in emergency_cases %}
+                <div class="col-md-6">
+                    <div class="bg-white p-3 rounded-3 shadow-sm border-start border-danger border-4">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <h6 class="fw-bold text-danger mb-1">{{ case.patient_name }} ({{ case.age }})</h6>
+                                <p class="mb-1 small text-dark fw-bold">{{ case.symptoms }}</p>
+                                <small class="text-muted"><i class="far fa-clock me-1"></i> {{ case.created_at|timesince }} ago</small>
+                            </div>
+                            <form action="{% url 'resolve_emergency_case' case.id %}" method="POST">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-sm btn-outline-danger rounded-pill">
+                                    <i class="fas fa-check me-1"></i> Resolve
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h5 class="section-title mb-0 d-flex align-items-center">
+                <i class="far fa-calendar-alt me-2"></i>
+                Appointments for
+                <form method="get" class="ms-2 mb-0" id="dateFilterForm">
+                    <input type="date" name="date" class="form-control form-control-sm"
+                        value="{{ selected_date|date:'Y-m-d' }}"
+                        onchange="document.getElementById('dateFilterForm').submit();"
+                        style="width: 150px; cursor: pointer;">
+                </form>
+            </h5>
+
+            <!-- Wellbeing Widget -->
+            <!-- Wellbeing Widget -->
+            <div class="bg-white px-3 py-2 rounded-pill shadow-sm d-flex align-items-center" style="min-width: 250px;">
+                <i class="fas fa-tint text-primary me-2"></i>
+                <div class="flex-grow-1 me-3">
+                    <div class="d-flex justify-content-between small fw-bold mb-1">
+                        <span>Hydration</span>
+                        <span id="waterCountDisplay">{{ health_status.water_intake|default:0 }}/8</span>
+                    </div>
+                    <div class="progress" style="height: 6px;">
+                        <div class="progress-bar bg-primary rounded-pill" role="progressbar"
+                            style="width: {% widthratio health_status.water_intake|default:0 8 100 %}%;"
+                            aria-valuenow="{{ health_status.water_intake|default:0 }}" aria-valuemin="0"
+                            aria-valuemax="8"></div>
+                    </div>
+                </div>
+                <button class="btn btn-sm btn-primary rounded-circle shadow-sm p-0" style="width: 28px; height: 28px;"
+                    onclick="addWater()" title="Add Water">
+                    <i class="fas fa-plus fa-xs"></i>
+                </button>
+
+                <div class="vr mx-3"></div>
+
+                {% if hours_worked > 8 %}
+                <span class="badge bg-danger rounded-pill">Overtime: {{ hours_worked }}h</span>
+                {% else %}
+                <span class="badge bg-success rounded-pill">Shift: {{ hours_worked }}h</span>
+                {% endif %}
+            </div>
+        </div>
+
+        {% for app in appointments %}
+        <div class="appointment-card">
+            <div class="d-flex justify-content-between align-items-start">
+                <div class="d-flex">
+                    <div class="bg-danger text-white rounded-circle d-flex align-items-center justify-content-center me-3"
+                        style="width: 40px; height: 40px;">
+                        {{ app.patient.user.first_name|make_list|first }}
+                    </div>
+                    <div>
+                        <h6 class="mb-1 fw-bold">{{ app.patient.user.get_full_name }}</h6>
+                        <p class="mb-1 small text-muted">{{ app.symptoms|truncatechars:100 }}</p>
+                    </div>
+                </div>
+                <div class="text-end">
+                    <span class="badge badge-status bg-scheduled mb-1">{{ app.status }}</span>
+                    <div class="small text-muted">{{ app.date }} • {{ app.time }}</div>
+                </div>
+            </div>
+
+            <div class="mt-3 pt-3 border-top d-flex justify-content-end gap-2">
+                <button class="btn btn-sm btn-outline-primary rounded-pill" data-bs-toggle="modal"
+                    data-bs-target="#testModal{{ app.id }}">
+                    <i class="fas fa-vial me-1"></i> Request Test
+                </button>
+                <button class="btn btn-sm btn-primary rounded-pill" data-bs-toggle="modal"
+                    data-bs-target="#prescriptionModal{{ app.id }}"
+                    style="background: var(--primary-teal); border: none;">
+                    <i class="fas fa-prescription me-1"></i> Prescribe
+                </button>
+            </div>
+        </div>
+
+        <!-- Prescription Modal -->
+        <div class="modal fade" id="prescriptionModal{{ app.id }}" tabindex="-1">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content rounded-4 border-0">
+                    <div class="modal-header border-0">
+                        <h5 class="modal-title fw-bold">Prescribe for {{ app.patient.user.first_name }}</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <form action="{% url 'add_prescription' app.id %}" method="post" id="prescForm{{ app.id }}"
+                        onsubmit="return submitPrescription({{ app.id }})">
+                        {% csrf_token %}
+                        <div class="modal-body">
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Medicines</label>
+                                <div id="medicineList{{ app.id }}">
+                                    <!-- First row -->
+                                    <div class="row g-2 mb-2 align-items-center medicine-row">
+                                        <div class="col-md-4">
+                                            <input type="text" class="form-control med-name" placeholder="Medicine Name"
+                                                required>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <div class="form-check form-check-inline">
+                                                <input class="form-check-input med-morning" type="checkbox"
+                                                    value="Morning">
+                                                <label class="form-check-label small">Morning</label>
+                                            </div>
+                                            <div class="form-check form-check-inline">
+                                                <input class="form-check-input med-afternoon" type="checkbox"
+                                                    value="Day">
+                                                <label class="form-check-label small">Day</label>
+                                            </div>
+                                            <div class="form-check form-check-inline">
+                                                <input class="form-check-input med-night" type="checkbox" value="Night">
+                                                <label class="form-check-label small">Night</label>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <select class="form-select form-select-sm med-food" required>
+                                                <option value="">Select Condition</option>
+                                                <option value="Before Food">Before Food</option>
+                                                <option value="After Food">After Food</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-md-1 text-end">
+                                            <button type="button" class="btn btn-sm btn-outline-danger"
+                                                onclick="this.closest('.medicine-row').remove()"><i
+                                                    class="fas fa-times"></i></button>
+                                        </div>
+                                    </div>
+                                </div>
+                                <button type="button" class="btn btn-sm btn-outline-primary mt-2"
+                                    onclick="addMedicineRow({{ app.id }})">
+                                    <i class="fas fa-plus me-1"></i> Add Medicine
+                                </button>
+                                <input type="hidden" name="medicines" id="finalMedicines{{ app.id }}">
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label small fw-bold">Notes</label>
+                                <textarea name="notes" class="form-control" rows="2"
+                                    placeholder="Dietary restrictions, etc."></textarea>
+                            </div>
+                        </div>
+                        <div class="modal-footer border-0">
+                            <button type="submit" class="btn btn-primary rounded-pill px-4"
+                                style="background: var(--primary-teal); border: none;">Save Prescription</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Test Modal -->
+        <div class="modal fade" id="testModal{{ app.id }}" tabindex="-1">
+            <div class="modal-dialog">
+                <div class="modal-content rounded-4 border-0">
+                    <div class="modal-header border-0">
+                        <h5 class="modal-title fw-bold">Request Lab Test</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <form action="{% url 'request_test' app.id %}" method="post">
+                        {% csrf_token %}
+                        <div class="modal-body">
+                            <div class="mb-3">
+                                <label class="form-label small fw-bold">Test Name</label>
+                                <input type="text" name="test_name" class="form-control"
+                                    placeholder="e.g. Complete Blood Count" required>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label small fw-bold">Reason/Notes</label>
+                                <textarea name="reason" class="form-control" rows="2"
+                                    placeholder="Reason for test..."></textarea>
+                            </div>
+                        </div>
+                        <div class="modal-footer border-0">
+                            <button type="submit" class="btn btn-primary rounded-pill px-4">Request Test</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        {% empty %}
+        <div class="text-center py-5 text-muted">
+            <i class="far fa-calendar-times fa-2x mb-3 opacity-50"></i>
+            <p>No appointments scheduled for this date.</p>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Right Sidebar -->
+    <div class="col-md-4">
+        <h5 class="section-title"><i class="fas fa-flask me-2"></i> Lab Reports & Test Requests</h5>
+
+        <!-- Test Requests -->
+        {% if test_requests %}
+        <div class="mb-3">
+            <h6 class="text-muted fw-bold">Pending Test Requests</h6>
+            {% for test in test_requests %}
+            <div class="report-card border-warning">
+                <div>
+                    <h6 class="mb-1 fw-bold">{{ test.appointment.patient.user.first_name }} - {{ test.test_name }}</h6>
+                    <small class="text-muted">{{ test.created_at|date:"Y-m-d H:i" }}</small>
+                </div>
+                <span class="badge bg-warning rounded-pill">Pending</span>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        <!-- Lab Reports -->
+        <h6 class="text-muted fw-bold">Lab Reports</h6>
+        {% for report in all_lab_reports %}
+        <div class="report-card">
+            <div>
+                <h6 class="mb-1 fw-bold">{{ report.patient.user.first_name }} - {{ report.title }}</h6>
+                <small class="text-muted">{{ report.uploaded_at|date:"Y-m-d" }}</small>
+            </div>
+            <div class="d-flex align-items-center gap-2">
+                {% if report.file %}
+                <a href="{{ report.file.url }}" target="_blank"
+                    class="btn btn-sm btn-outline-primary rounded-pill px-3">
+                    <i class="fas fa-eye me-1"></i> View
+                </a>
+                {% endif %}
+                {% if report.result %}
+                <span class="badge bg-success rounded-pill">Completed</span>
+                {% else %}
+                <span class="badge bg-secondary rounded-pill">Awaiting Results</span>
+                {% endif %}
+            </div>
+        </div>
+        {% empty %}
+        <div class="text-center py-4 text-muted card border-0 shadow-sm">
+            <small>No lab reports yet.</small>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<script>
+    // Water Reminder: Alert every 60 minutes (3600000 ms)
+    setInterval(function () {
+        alert("💧 Hydration Reminder: Dr. {{ doctor.user.last_name }}, please drink some water!");
+    }, 3600000); // 1 hour
+
+    // Rest Reminder: Alert if shift > 8 hours (check on page load if backend doesn't handle)
+    // Here we can use a simple frontend timer since page load
+    let minutesOnline = 0;
+    setInterval(function () {
+        minutesOnline++;
+        if (minutesOnline % 240 === 0) { // Every 4 hours
+            alert("🛑 Rest Reminder: You've been working for 4 hours seamlessly. Please take a short break.");
+        }
+    }, 60000); // Check every minute
+
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                // Does this cookie string begin with the name we want?
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+
+    function addWater() {
+        const btn = document.querySelector('button[onclick="addWater()"]');
+        const icon = btn.querySelector('i');
+
+        // Add rotation animation
+        icon.style.transition = 'transform 0.5s';
+        icon.style.transform = 'rotate(180deg)';
+
+        const csrftoken = getCookie('csrftoken');
+        fetch("{% url 'update_health_status' %}", {
+            method: "POST",
+            headers: {
+                "X-CSRFToken": csrftoken,
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({ action: 'add_water' })
+        })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Update Progress Bar
+                    const count = data.water;
+                    const max = 8;
+                    const percentage = Math.min((count / max) * 100, 100);
+
+                    document.getElementById('waterCountDisplay').innerText = `${count}/${max}`;
+
+                    const progressBar = document.querySelector('.progress-bar');
+                    if (progressBar) {
+                        progressBar.style.width = `${percentage}%`;
+                        progressBar.setAttribute('aria-valuenow', count);
+                    }
+
+                    // Reset rotation
+                    setTimeout(() => {
+                        icon.style.transform = 'rotate(0deg)';
+                    }, 500);
+                } else {
+                    alert("Error updating water intake: " + data.error);
+                }
+            });
+    }
+</script>
+
+<!-- Request Lab Test Modal -->
+<div class="modal fade" id="requestLabTestModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header" style="background: #8e44ad; color: white;">
+                <h5 class="modal-title"><i class="fas fa-flask me-2"></i>Request Lab Test</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                    aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <!-- Step 1: Select Appointment -->
+                <div id="stepSelectTestAppointment">
+                    <h6 class="fw-bold mb-3">Select Patient Appointment</h6>
+                    <div class="mb-3">
+                        <select class="form-select" id="testAppointmentSelect" onchange="showTestRequestForm()">
+                            <option value="">-- Select Appointment --</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Step 2: Test Request Form -->
+                <div id="stepTestRequestForm" style="display: none;">
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>
+                        <span id="selectedTestPatientName"></span>
+                    </div>
+
+                    <form id="testRequestForm" action="" method="post">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Select Tests</label>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" name="test_name"
+                                            value="Blood Test" id="testBlood">
+                                        <label class="form-check-label" for="testBlood">Blood Test</label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" name="test_name"
+                                            value="Urine Test" id="testUrine">
+                                        <label class="form-check-label" for="testUrine">Urine Test</label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" name="test_name" value="X-Ray"
+                                            id="testXRay">
+                                        <label class="form-check-label" for="testXRay">X-Ray</label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" name="test_name" value="ECG"
+                                            id="testECG">
+                                        <label class="form-check-label" for="testECG">ECG</label>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" name="test_name" value="MRI"
+                                            id="testMRI">
+                                        <label class="form-check-label" for="testMRI">MRI</label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" name="test_name" value="CT Scan"
+                                            id="testCT">
+                                        <label class="form-check-label" for="testCT">CT Scan</label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" name="test_name"
+                                            value="Ultrasound" id="testUltra">
+                                        <label class="form-check-label" for="testUltra">Ultrasound</label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" name="test_name" value="Other"
+                                            id="testOther">
+                                        <label class="form-check-label" for="testOther">Other</label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Test Condition</label>
+                            <div class="d-flex gap-3">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="test_condition" id="condFasting"
+                                        value="Fasting">
+                                    <label class="form-check-label" for="condFasting">Fasting</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="test_condition"
+                                        id="condPostPrandial" value="Post-Prandial (After Food)">
+                                    <label class="form-check-label" for="condPostPrandial">Post-Prandial (After
+                                        food)</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="test_condition" id="condRandom"
+                                        value="Random" checked>
+                                    <label class="form-check-label" for="condRandom">Random (Any time)</label>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Reason for Test (Optional)</label>
+                            <textarea class="form-control" name="reason" rows="2"
+                                placeholder="Reason for ordering this test..."></textarea>
+                        </div>
+                        <div class="d-flex justify-content-between">
+                            <button type="button" class="btn btn-secondary" onclick="resetTestRequestForm()">
+                                <i class="fas fa-arrow-left me-1"></i> Back
+                            </button>
+                            <button type="submit" class="btn btn-primary" style="background: #8e44ad; border: none;">
+                                <i class="fas fa-paper-plane me-1"></i> Request Tests
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function addMedicineRow(appId) {
+        const rowHtml = `
+            <div class="row g-2 mb-2 align-items-center medicine-row">
+                <div class="col-md-4">
+                    <input type="text" class="form-control med-name" placeholder="Medicine Name" required>
+                </div>
+                <div class="col-md-4">
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input med-morning" type="checkbox" value="Morning">
+                        <label class="form-check-label small">Morning</label>
+                    </div>
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input med-afternoon" type="checkbox" value="Day">
+                        <label class="form-check-label small">Day</label>
+                    </div>
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input med-night" type="checkbox" value="Night">
+                        <label class="form-check-label small">Night</label>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <select class="form-select form-select-sm med-food" required>
+                        <option value="">Select Condition</option>
+                        <option value="Before Food">Before Food</option>
+                        <option value="After Food">After Food</option>
+                    </select>
+                </div>
+                <div class="col-md-1 text-end">
+                    <button type="button" class="btn btn-sm btn-outline-danger" onclick="this.closest('.medicine-row').remove()"><i class="fas fa-times"></i></button>
+                </div>
+            </div>
+        `;
+        document.getElementById('medicineList' + appId).insertAdjacentHTML('beforeend', rowHtml);
+    }
+
+    function submitPrescription(appId) {
+        const rows = document.querySelectorAll('#medicineList' + appId + ' .medicine-row');
+        let rawMedicines = [];
+
+        if (rows.length === 0) {
+            alert("Please add at least one medicine.");
+            return false;
+        }
+
+        let isValid = true;
+        rows.forEach(row => {
+            const name = row.querySelector('.med-name').value.trim();
+            const food = row.querySelector('.med-food').value;
+
+            let timings = [];
+            if (row.querySelector('.med-morning').checked) timings.push("Morning");
+            if (row.querySelector('.med-afternoon').checked) timings.push("Day");
+            if (row.querySelector('.med-night').checked) timings.push("Night");
+
+            if (!name || timings.length === 0 || !food) {
+                isValid = false;
+            }
+
+            rawMedicines.push(`${name} - ${timings.join(', ')} - ${food}`);
+        });
+
+        if (!isValid) {
+            alert("Please complete all medicine fields including at least one timing.");
+            return false;
+        }
+
+        document.getElementById('finalMedicines' + appId).value = rawMedicines.join('\n');
+        return true;
+    }
+
+    // Load appointments when modal opens
+    document.getElementById('requestLabTestModal').addEventListener('show.bs.modal', function () {
+        loadAppointmentsForTest();
+    });
+
+    function loadAppointmentsForTest() {
+        fetch('{% url "get_appointments_for_test" %}')
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    const select = document.getElementById('testAppointmentSelect');
+                    select.innerHTML = '<option value="">-- Select Appointment --</option>';
+
+                    data.appointments.forEach(app => {
+                        const option = document.createElement('option');
+                        option.value = app.id;
+                        let existingTests = '';
+                        if (app.existing_tests && app.existing_tests.length > 0) {
+                            existingTests = ' (Requested: ' + app.existing_tests.join(', ') + ')';
+                        }
+                        option.textContent = `${app.patient_name} - ${app.date} at ${app.time}${existingTests}`;
+                        select.appendChild(option);
+                    });
+                }
+            });
+    }
+
+    function showTestRequestForm() {
+        const select = document.getElementById('testAppointmentSelect');
+        const appointmentId = select.value;
+
+        if (appointmentId) {
+            const selectedText = select.options[select.selectedIndex].text;
+            const patientName = selectedText.split(' - ')[0];
+
+            document.getElementById('selectedTestPatientName').textContent = 'Patient: ' + patientName;
+            document.getElementById('stepSelectTestAppointment').style.display = 'none';
+            document.getElementById('stepTestRequestForm').style.display = 'block';
+
+            // Set form action
+            document.getElementById('testRequestForm').action = '/doctor/test-request/' + appointmentId + '/';
+        }
+    }
+
+    function resetTestRequestForm() {
+        document.getElementById('stepTestRequestForm').style.display = 'none';
+        document.getElementById('stepSelectTestAppointment').style.display = 'block';
+        document.getElementById('testAppointmentSelect').value = '';
+        document.getElementById('testRequestForm').reset();
+    }
+</script>
+
+<!-- Add Prescription Modal -->
+<div class="modal fade" id="addPrescriptionModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header" style="background: var(--primary-teal); color: white;">
+                <h5 class="modal-title"><i class="fas fa-prescription me-2"></i>Add Prescription</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                    aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <!-- Step 1: Select Appointment -->
+                <div id="stepSelectAppointment">
+                    <h6 class="fw-bold mb-3">Select Patient Appointment</h6>
+                    <div class="mb-3">
+                        <select class="form-select" id="appointmentSelect" onchange="showPrescriptionForm()">
+                            <option value="">-- Select Appointment --</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Step 2: Prescription Form -->
+                <div id="stepPrescriptionForm" style="display: none;">
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>
+                        <span id="selectedPatientName"></span>
+                    </div>
+                    <form id="prescriptionForm" action="" method="post">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Medicines</label>
+                            <textarea class="form-control" name="medicines" rows="4"
+                                placeholder="Enter medicines with dosage and frequency&#10;Example:&#10;Paracetamol 500mg - 3 times a day&#10;Amoxicillin 250mg - 2 times a day"
+                                required></textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Notes (Optional)</label>
+                            <textarea class="form-control" name="notes" rows="2"
+                                placeholder="Additional instructions for the patient"></textarea>
+                        </div>
+                        <div class="d-flex justify-content-between">
+                            <button type="button" class="btn btn-secondary" onclick="resetPrescriptionForm()">
+                                <i class="fas fa-arrow-left me-1"></i> Back
+                            </button>
+                            <button type="submit" class="btn btn-primary"
+                                style="background: var(--primary-teal); border: none;">
+                                <i class="fas fa-save me-1"></i> Save Prescription
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Load appointments when modal opens
+    document.getElementById('addPrescriptionModal').addEventListener('show.bs.modal', function () {
+        loadAppointmentsForPrescription();
+    });
+
+    function loadAppointmentsForPrescription() {
+        fetch('{% url "get_appointments_for_prescription" %}')
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    const select = document.getElementById('appointmentSelect');
+                    select.innerHTML = '<option value="">-- Select Appointment --</option>';
+
+                    data.appointments.forEach(app => {
+                        const option = document.createElement('option');
+                        option.value = app.id;
+                        const prescriptionBadge = app.has_prescription ? ' (Prescribed)' : '';
+                        option.textContent = `${app.patient_name} - ${app.date} at ${app.time}${prescriptionBadge}`;
+                        if (app.has_prescription) {
+                            option.style.color = 'gray';
+                            option.disabled = true;
+                        }
+                        select.appendChild(option);
+                    });
+                }
+            });
+    }
+
+    function showPrescriptionForm() {
+        const select = document.getElementById('appointmentSelect');
+        const appointmentId = select.value;
+
+        if (appointmentId) {
+            const selectedText = select.options[select.selectedIndex].text;
+            const patientName = selectedText.split(' - ')[0];
+
+            document.getElementById('selectedPatientName').textContent = 'Patient: ' + patientName;
+            document.getElementById('stepSelectAppointment').style.display = 'none';
+            document.getElementById('stepPrescriptionForm').style.display = 'block';
+
+            // Set form action
+            document.getElementById('prescriptionForm').action = '/doctor/prescription/' + appointmentId + '/';
+        }
+    }
+
+    function resetPrescriptionForm() {
+        document.getElementById('stepPrescriptionForm').style.display = 'none';
+        document.getElementById('stepSelectAppointment').style.display = 'block';
+        document.getElementById('appointmentSelect').value = '';
+        document.getElementById('prescriptionForm').reset();
+    }
+</script>
+{% endblock %}

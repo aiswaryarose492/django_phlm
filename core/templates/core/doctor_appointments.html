@@ -1,0 +1,939 @@
+{% extends 'core/base.html' %}
+{% load static %}
+{% block title %}My Appointments | Doctor{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h3 class="fw-bold mb-0 text-dark"><i class="far fa-calendar-alt text-primary me-2"></i>My Appointments</h3>
+    <a href="{% url 'doctor_dashboard' %}" class="btn btn-outline-secondary rounded-pill shadow-sm">
+        <i class="fas fa-arrow-left me-1"></i> Back to Hub
+    </a>
+</div>
+
+<div class="card border-0 shadow-sm rounded-4 h-100">
+    <div class="card-header bg-white border-0 py-3 d-flex justify-content-between align-items-center">
+        <h5 class="fw-bold mb-0">Schedule</h5>
+
+        <!-- Date Filter Form -->
+        <form method="get" class="d-flex align-items-center">
+            <label for="date-select" class="me-2 fw-bold text-muted small mb-0">Date:</label>
+            <div class="input-group input-group-sm w-auto shadow-sm">
+                <input type="date" id="date-select" name="date" class="form-control form-control-sm border-end-0"
+                    value="{{ selected_date|date:'Y-m-d' }}">
+                <button type="submit" class="btn btn-outline-primary border"><i class="fas fa-search"></i></button>
+            </div>
+            {% if selected_date|date:'Y-m-d' != request.resolver_match.kwargs.date|default:'' %}
+            <a href="{% url 'doctor_appointments' %}"
+                class="btn btn-sm btn-link ms-2 text-decoration-none small">Clear</a>
+            {% endif %}
+        </form>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="bg-light">
+                    <tr>
+                        <th class="border-0 rounded-start-4 ps-4">Patient</th>
+                        <th class="border-0">Time</th>
+                        <th class="border-0 text-center">Status</th>
+                        <th class="border-0">Prescription</th>
+                        <th class="border-0 rounded-end-4 text-end pe-4">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for app in appointments %}
+                    <tr>
+                        <td class="ps-4 py-3">
+                            <div class="d-flex align-items-center">
+                                <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center me-3"
+                                    style="width: 40px; height: 40px; font-weight: bold;">
+                                    {{ app.patient.user.first_name|make_list|first }}
+                                </div>
+                                <div>
+                                    <div class="fw-bold text-dark">{{ app.patient.user.get_full_name }}</div>
+                                    <div class="small text-muted">ID: #{{ app.patient.id }}</div>
+                                </div>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="fw-bold text-dark">{{ app.time|time:"f A" }}</div>
+                            <div class="small text-muted">{{ app.date }}</div>
+                            {% if app.is_online %}
+                            <span class="badge bg-info text-dark mt-1"><i class="fas fa-video me-1"></i> Online</span>
+                            {% else %}
+                            <span class="badge bg-light text-secondary border mt-1"><i class="fas fa-clinic-medical me-1"></i> In-Clinic</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-center">
+                            {% if app.status == 'Confirmed' %}
+                            <span class="badge bg-success-subtle text-success rounded-pill px-3">Confirmed</span>
+                            {% elif app.status == 'Pending' %}
+                            <span class="badge bg-warning-subtle text-warning rounded-pill px-3">Pending</span>
+                            {% elif app.status == 'Completed' %}
+                            <span class="badge bg-info-subtle text-info rounded-pill px-3">Consulted</span>
+                            {% else %}
+                            <span class="badge bg-secondary-subtle text-secondary rounded-pill px-3">{{ app.status }}</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if app.prescription %}
+                            <span class="text-success small fw-bold"><i
+                                    class="fas fa-check-circle me-1"></i>Prescribed</span>
+                            {% else %}
+                            <span class="text-muted small"><i class="fas fa-times-circle me-1"></i>Not given</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-end pe-4">
+                            {% if app.is_online and app.meet_link %}
+                            <a href="{% url 'start_meet' app.id %}" class="btn btn-sm btn-outline-primary rounded-pill px-3 me-2 shadow-sm" title="Start Video Consultation">
+                                <i class="fas fa-video"></i> Start Meet
+                            </a>
+                            <button class="btn btn-sm btn-outline-secondary rounded-pill px-2 me-2 shadow-sm"
+                                onclick="openMeetLinkModal('{{ app.id }}', '{{ app.patient.user.get_full_name }}', '{{ app.meet_link }}')"
+                                title="Edit Meet Link">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            {% elif app.is_online and not app.meet_link %}
+                            <button class="btn btn-sm btn-warning rounded-pill px-3 me-2 shadow-sm"
+                                onclick="openMeetLinkModal('{{ app.id }}', '{{ app.patient.user.get_full_name }}', '')"
+                                title="Set Meet Link">
+                                <i class="fas fa-video-plus me-1"></i> Set Meet Link
+                            </button>
+                            {% else %}
+                            <a href="{% url 'notify_next_patient' app.id %}" class="btn btn-sm btn-primary rounded-pill px-3 me-2 shadow-sm" title="Call Next Patient">
+                                <i class="fas fa-bullhorn"></i> Call Patient
+                            </a>
+                            {% endif %}
+                            <button class="btn btn-sm btn-outline-success rounded-pill px-3 me-2 shadow-sm"
+                                onclick="openPrescriptionModal('{{ app.id }}', '{{ app.patient.user.get_full_name }}', '{{ app.patient.id }}')"
+                                title="Add Prescription">
+                                <i class="fas fa-prescription"></i>
+                            </button>
+                            <button class="btn btn-sm btn-outline-info rounded-pill px-3 me-2 shadow-sm"
+                                onclick="openTestRequestModal('{{ app.id }}', '{{ app.patient.user.get_full_name }}')"
+                                title="Request Lab">
+                                <i class="fas fa-flask"></i>
+                            </button>
+                            <button class="btn btn-sm btn-outline-danger rounded-pill px-3 me-2 shadow-sm"
+                                onclick="openAdmitModal('{{ app.patient.id }}', '{{ app.patient.user.get_full_name }}')"
+                                title="Admit Patient">
+                                <i class="fas fa-procedures"></i>
+                            </button>
+                            <button class="btn btn-sm btn-outline-warning rounded-pill px-3 shadow-sm"
+                                onclick="openAmbulanceModal('{{ app.patient.user.get_full_name }}', '{{ app.patient.address|escapejs }}')"
+                                title="Request Ambulance">
+                                <i class="fas fa-ambulance"></i>
+                            </button>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="5" class="text-center py-5 text-muted">
+                            <div class="fs-1 mb-3 text-light-gray"><i class="far fa-calendar-times"></i></div>
+                            <h5>No appointments scheduled for {{ selected_date|date:"F j, Y" }}.</h5>
+                            <p class="small">Check another date or manage your availability.</p>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- ================= MODALS ================= -->
+
+<!-- Set/Update Meet Link Modal -->
+<div class="modal fade" id="meetLinkModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 rounded-4 shadow">
+            <div class="modal-header border-bottom-0 bg-light rounded-top-4 pb-0">
+                <h5 class="modal-title fw-bold text-dark"><i class="fas fa-video text-primary me-2"></i>Video Consultation Link</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4">
+                <form id="meetLinkForm" method="post" action="">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label class="form-label fw-bold small text-muted text-uppercase">Patient</label>
+                        <div class="fw-bold fs-5" id="meetLinkPatientName"></div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <div class="form-check form-switch mb-3">
+                            <input class="form-check-input" type="checkbox" id="autoGenerateToggle" name="generate_new" checked>
+                            <label class="form-check-label fw-bold" for="autoGenerateToggle">
+                                <i class="fas fa-magic me-1"></i> Auto-generate meeting room
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="mb-3" id="customLinkSection" style="display:none;">
+                        <label class="form-label fw-bold small text-muted text-uppercase">Custom Meeting Link</label>
+                        <input type="url" class="form-control border-light-subtle shadow-sm" name="meet_link" id="meetLinkInput"
+                            placeholder="https://meet.google.com/xxx-xxxx-xxx or any video link">
+                        <small class="text-muted">Paste a Google Meet, Zoom, or any video conferencing link.</small>
+                    </div>
+
+                    <div class="alert alert-info rounded-3 py-2 small mb-3" id="autoGenerateInfo">
+                        <i class="fas fa-info-circle me-1"></i> A secure video room will be created automatically. The patient will be notified immediately.
+                    </div>
+
+                    <button type="submit" class="btn btn-primary w-100 rounded-pill py-2 shadow-sm fw-bold">
+                        <i class="fas fa-check me-1"></i> Save Meet Link
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Admit Patient Modal -->
+<div class="modal fade" id="admitPatientModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content border-0 rounded-4 shadow">
+            <div class="modal-header border-bottom-0 bg-danger bg-opacity-10 rounded-top-4 pb-0">
+                <h5 class="modal-title fw-bold text-dark"><i class="fas fa-procedures text-danger me-2"></i>Admit Patient</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4">
+                <form id="admitForm" method="post" action="{% url 'admit_patient' %}">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label class="form-label fw-bold small text-muted text-uppercase">Patient</label>
+                        <div class="fw-bold fs-5" id="admitPatientName"></div>
+                        <input type="hidden" name="patient_id" id="admitPatientId">
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold small text-muted text-uppercase mb-2">Select Ward *</label>
+                        <div class="row g-2" id="wardCardsContainer">
+                            <!-- Ward cards populated by JS -->
+                        </div>
+                        <input type="hidden" name="ward_id" id="admitWardId" required>
+                        <div class="mt-2">
+                            <small class="text-danger d-none" id="wardRequiredMsg">Please select a ward.</small>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold small text-muted text-uppercase">Bed Number</label>
+                        <input type="text" class="form-control border-light-subtle shadow-sm" name="bed_number" placeholder="e.g., B-12">
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold small text-muted text-uppercase">Admission Reason *</label>
+                        <textarea class="form-control border-light-subtle shadow-sm" name="admission_reason" rows="2" required placeholder="Reason for admission..."></textarea>
+                    </div>
+
+                    <div class="mb-3">
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" id="isSeriousToggle" name="is_serious">
+                            <label class="form-check-label fw-bold text-danger" for="isSeriousToggle">
+                                <i class="fas fa-exclamation-triangle me-1"></i> Mark as Serious / Critical
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="alert alert-info rounded-3 py-2 small mb-3">
+                        <i class="fas fa-info-circle me-1"></i> Nurses will be automatically assigned and notified. Ward occupancy will be updated.
+                    </div>
+
+                    <button type="submit" class="btn btn-danger w-100 rounded-pill py-2 shadow-sm fw-bold">
+                        <i class="fas fa-procedures me-1"></i> Admit Patient
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Request Ambulance Modal -->
+<div class="modal fade" id="ambulanceModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 rounded-4 shadow">
+            <div class="modal-header border-bottom-0 bg-warning bg-opacity-10 rounded-top-4 pb-0">
+                <h5 class="modal-title fw-bold text-dark"><i class="fas fa-ambulance text-warning me-2"></i>Request Ambulance</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4">
+                <form id="ambulanceForm" method="post" action="{% url 'request_ambulance' %}">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label class="form-label fw-bold small text-muted text-uppercase">Patient Name *</label>
+                        <input type="text" class="form-control border-light-subtle shadow-sm" name="patient_name" id="ambulancePatientName" required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold small text-muted text-uppercase">Pickup Location *</label>
+                        <textarea class="form-control border-light-subtle shadow-sm" name="pickup_location" id="ambulancePickupLocation" rows="2" required placeholder="Enter pickup address..."></textarea>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold small text-muted text-uppercase">Contact Number</label>
+                        <input type="text" class="form-control border-light-subtle shadow-sm" name="contact_number" placeholder="Phone number">
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold small text-muted text-uppercase">Emergency Type</label>
+                        <select class="form-select border-light-subtle shadow-sm" name="emergency_type">
+                            <option value="Patient Transfer">Patient Transfer</option>
+                            <option value="Accident">Accident</option>
+                            <option value="Heart Attack">Heart Attack</option>
+                            <option value="Stroke">Stroke</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
+
+                    <button type="submit" class="btn btn-warning w-100 rounded-pill py-2 shadow-sm fw-bold">
+                        <i class="fas fa-ambulance me-1"></i> Dispatch Ambulance
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Request Lab Modal -->
+<div class="modal fade" id="requestLabTestModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 rounded-4 shadow">
+            <div class="modal-header border-bottom-0 bg-light rounded-top-4 pb-0">
+                <h5 class="modal-title fw-bold text-dark"><i class="fas fa-flask text-primary me-2"></i>Request Lab
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+
+            <div class="modal-body p-4">
+                <form id="labTestForm" method="post" action="">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label class="form-label fw-bold small text-muted text-uppercase">Select Patient
+                            Appointment</label>
+                        <select class="form-select border-light-subtle shadow-sm" id="testAppointmentSelect" required
+                            onchange="updateLabTestFormAction(this.value)">
+                            <option value="">-- Choose an appointment --</option>
+                            {% for app in appointments %}
+                            {% with app_time=app.time|time:"f A" p_name=app.patient.user.get_full_name %}
+                            <option value="{{ app.id }}">{{ p_name }} - {{ app_time }}</option>
+                            {% endwith %}
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold small text-muted text-uppercase">Select Labs</label>
+                        <div class="row g-2 mb-2">
+                            <div class="col-md-6">
+                                <div class="form-check p-2 border rounded shadow-sm test-check-box">
+                                    <input class="form-check-input ms-0 me-2" type="checkbox" name="test_name"
+                                        value="Complete Blood Count (CBC)" id="test_cbc">
+                                    <label class="form-check-label w-100 fw-bold cursor-pointer small"
+                                        for="test_cbc">CBC</label>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-check p-2 border rounded shadow-sm test-check-box">
+                                    <input class="form-check-input ms-0 me-2" type="checkbox" name="test_name"
+                                        value="Urinalysis" id="test_urine">
+                                    <label class="form-check-label w-100 fw-bold cursor-pointer small"
+                                        for="test_urine">Urinalysis</label>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-check p-2 border rounded shadow-sm test-check-box">
+                                    <input class="form-check-input ms-0 me-2" type="checkbox" name="test_name"
+                                        value="Lipid Panel" id="test_lipid">
+                                    <label class="form-check-label w-100 fw-bold cursor-pointer small"
+                                        for="test_lipid">Lipid Panel</label>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-check p-2 border rounded shadow-sm test-check-box">
+                                    <input class="form-check-input ms-0 me-2" type="checkbox" name="test_name"
+                                        value="Blood Glucose" id="test_glucose">
+                                    <label class="form-check-label w-100 fw-bold cursor-pointer small"
+                                        for="test_glucose">Blood Glucose</label>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-check p-2 border rounded shadow-sm test-check-box">
+                                    <input class="form-check-input ms-0 me-2" type="checkbox" name="test_name"
+                                        value="Thyroid Panel (TSH)" id="test_tsh">
+                                    <label class="form-check-label w-100 fw-bold cursor-pointer small"
+                                        for="test_tsh">Thyroid Panel (TSH)</label>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-check p-2 border rounded shadow-sm test-check-box">
+                                    <input class="form-check-input ms-0 me-2" type="checkbox" name="test_name"
+                                        value="Liver Function Test" id="test_lft">
+                                    <label class="form-check-label w-100 fw-bold cursor-pointer small"
+                                        for="test_lft">Liver Function Test</label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold small text-muted text-uppercase">Condition</label>
+                        <select class="form-select border-light-subtle shadow-sm" name="test_condition">
+                            <option value="">Normal</option>
+                            <option value="Fasting (8-12 Hours)">Fasting Required (8-12 Hours)</option>
+                            <option value="Post-Prandial (After Meal)">Post-Prandial (After Meal)</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label fw-bold small text-muted text-uppercase">Reason / Notes for Lab</label>
+                        <textarea class="form-control border-light-subtle shadow-sm" name="reason" rows="2"
+                            placeholder="E.g., Routine checkup, confirm diagnosis..."></textarea>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary w-100 rounded-pill py-2 shadow-sm fw-bold"
+                        id="submitTestBtn" disabled>
+                        Submit Lab Request
+                    </button>
+
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Prescription Modal -->
+<div class="modal fade" id="addPrescriptionModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content border-0 rounded-4 shadow">
+            <div class="modal-header border-bottom-0 bg-light rounded-top-4 pb-0">
+                <h5 class="modal-title fw-bold text-dark"><i class="fas fa-prescription text-success me-2"></i>Add
+                    Prescription</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+
+            <div class="modal-body p-4">
+                <form id="prescriptionForm" method="post" action="">
+                    {% csrf_token %}
+
+                    <div class="row mb-4">
+                        <div class="col-md-12">
+                            <label class="form-label fw-bold small text-muted text-uppercase">Select Patient
+                                Appointment</label>
+                            <select class="form-select border-light-subtle shadow-sm" id="prescAppointmentSelect"
+                                required onchange="updatePrescriptionFormAction(this.value)">
+                                <option value="">-- Choose an appointment --</option>
+                                {% for app in appointments %}
+                                {% with app_time=app.time|time:"f A" p_name=app.patient.user.get_full_name %}
+                                <option value="{{ app.id }}">{{ p_name }} - {{ app_time }}</option>
+                                {% endwith %}
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="card border border-light-subtle shadow-sm rounded-3 mb-4">
+                        <div
+                            class="card-header bg-light border-bottom-0 py-2 d-flex justify-content-between align-items-center">
+                            <h6 class="mb-0 fw-bold text-dark">Medicines</h6>
+                            <div class="form-check form-switch mb-0">
+                                <input class="form-check-input mt-1" type="checkbox" id="needMedicineToggle" checked>
+                                <label class="form-check-label small fw-bold mt-1" for="needMedicineToggle">Prescribe
+                                    Medicines?</label>
+                            </div>
+                        </div>
+                        <div class="card-body p-3" id="medicineSectionBody">
+                            <div id="medicineList">
+                                <div class="medicine-item row g-2 mb-3 pb-3 border-bottom align-items-end">
+                                    <div class="col-md-4">
+                                        <label class="form-label small text-muted mb-1">Medicine Name</label>
+                                        <input type="text" list="commonMedicines"
+                                            class="form-control form-control-sm med-name"
+                                            placeholder="Select or type medicine" autocomplete="off">
+                                        <datalist id="commonMedicines">
+                                            <option value="Paracetamol 500mg">
+                                            <option value="Amoxicillin 250mg">
+                                            <option value="Ibuprofen 400mg">
+                                            <option value="Cetirizine 10mg">
+                                            <option value="Azithromycin 500mg">
+                                            <option value="Pantoprazole 40mg">
+                                            <option value="Metformin 500mg">
+                                            <option value="Aspirin 75mg">
+                                            <option value="Cough Syrup 100ml">
+                                        </datalist>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label class="form-label small text-muted mb-1">Timing</label>
+                                        <select class="form-select form-select-sm med-timing">
+                                            <option value="Morning">Morning</option>
+                                            <option value="Night">Night</option>
+                                            <option value="Morning, Night (2 times)">Morning, Night (2 times)</option>
+                                            <option value="Morning, Noon, Night (3 times)">Morning, Noon, Night (3
+                                                times)</option>
+                                            <option value="4 times a day">4 times a day</option>
+                                            <option value="As needed">As needed</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label class="form-label small text-muted mb-1">Condition</label>
+                                        <select class="form-select form-select-sm med-condition">
+                                            <option value="After Food">After Food</option>
+                                            <option value="Before Food">Before Food</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-2 text-end">
+                                        <button type="button" class="btn btn-sm btn-outline-danger remove-med-btn"
+                                            style="display:none;"><i class="fas fa-trash"></i></button>
+                                    </div>
+                                </div>
+                            </div>
+                            <button type="button" class="btn btn-sm btn-outline-primary" id="addMedicineBtn">
+                                <i class="fas fa-plus me-1"></i> Add Another Medicine
+                            </button>
+                        </div>
+</div>
+
+                     <textarea name="medicines" id="compiledMedicines" style="display:none;"></textarea>
+
+                     <!-- Lab Tests Section -->
+                     <div class="card border border-light-subtle shadow-sm rounded-3 mb-4">
+                         <div class="card-header bg-light border-bottom-0 py-2 d-flex justify-content-between align-items-center">
+                             <h6 class="mb-0 fw-bold text-dark"><i class="fas fa-flask me-1"></i>Lab Tests (Optional)</h6>
+                             <div class="form-check form-switch mb-0">
+                                 <input class="form-check-input mt-1" type="checkbox" id="needLabTestToggle">
+                                 <label class="form-check-label small fw-bold mt-1" for="needLabTestToggle">Request Lab Tests?</label>
+                             </div>
+                         </div>
+                         <div class="card-body p-3" id="labTestSectionBody" style="display:none;">
+                             <div class="row g-2 mb-2">
+                                 <div class="col-md-6">
+                                     <div class="form-check p-2 border rounded shadow-sm test-check-box">
+                                         <input class="form-check-input ms-0 me-2" type="checkbox" name="test_name" value="Complete Blood Count (CBC)" id="test_cbc_presc">
+                                         <label class="form-check-label w-100 fw-bold cursor-pointer small" for="test_cbc_presc">CBC</label>
+                                     </div>
+                                 </div>
+                                 <div class="col-md-6">
+                                     <div class="form-check p-2 border rounded shadow-sm test-check-box">
+                                         <input class="form-check-input ms-0 me-2" type="checkbox" name="test_name" value="Urinalysis" id="test_urine_presc">
+                                         <label class="form-check-label w-100 fw-bold cursor-pointer small" for="test_urine_presc">Urinalysis</label>
+                                     </div>
+                                 </div>
+                                 <div class="col-md-6">
+                                     <div class="form-check p-2 border rounded shadow-sm test-check-box">
+                                         <input class="form-check-input ms-0 me-2" type="checkbox" name="test_name" value="Blood Glucose" id="test_glucose_presc">
+                                         <label class="form-check-label w-100 fw-bold cursor-pointer small" for="test_glucose_presc">Blood Glucose</label>
+                                     </div>
+                                 </div>
+                                 <div class="col-md-6">
+                                     <div class="form-check p-2 border rounded shadow-sm test-check-box">
+                                         <input class="form-check-input ms-0 me-2" type="checkbox" name="test_name" value="Lipid Panel" id="test_lipid_presc">
+                                         <label class="form-check-label w-100 fw-bold cursor-pointer small" for="test_lipid_presc">Lipid Panel</label>
+                                     </div>
+                                 </div>
+                                 <div class="col-md-6">
+                                     <div class="form-check p-2 border rounded shadow-sm test-check-box">
+                                         <input class="form-check-input ms-0 me-2" type="checkbox" name="test_name" value="Thyroid Panel (TSH)" id="test_tsh_presc">
+                                         <label class="form-check-label w-100 fw-bold cursor-pointer small" for="test_tsh_presc">Thyroid Panel (TSH)</label>
+                                     </div>
+                                 </div>
+                                 <div class="col-md-6">
+                                     <div class="form-check p-2 border rounded shadow-sm test-check-box">
+                                         <input class="form-check-input ms-0 me-2" type="checkbox" name="test_name" value="Liver Function Test" id="test_lft_presc">
+                                         <label class="form-check-label w-100 fw-bold cursor-pointer small" for="test_lft_presc">Liver Function Test</label>
+                                     </div>
+                                 </div>
+                             </div>
+                             <div class="mb-3">
+                                 <label class="form-label fw-bold small text-muted text-uppercase">Reason / Notes for Lab</label>
+                                 <textarea class="form-control border-light-subtle shadow-sm" name="test_reason" rows="2" placeholder="E.g., Confirm diagnosis..."></textarea>
+                             </div>
+                         </div>
+                     </div>
+
+                     <div class="mb-4">
+                         <label class="form-label fw-bold small text-muted text-uppercase">General Notes / Advice</label>
+                         <textarea class="form-control border-light-subtle shadow-sm" name="notes" id="prescNotes"
+                             rows="2" placeholder="E.g., Drink plenty of water, rest for 2 days..."></textarea>
+                     </div>
+
+                    <div class="text-end">
+                        <button type="button" class="btn btn-light me-2 rounded-pill"
+                            data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-success px-4 rounded-pill shadow-sm fw-bold"
+                            id="submitPrescBtn" disabled>
+                            Save Prescription
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .ward-card:hover:not(.opacity-50) {
+        border-color: var(--bs-primary) !important;
+        box-shadow: 0 0.125rem 0.5rem rgba(13, 110, 253, 0.15);
+    }
+    .ward-card {
+        cursor: pointer;
+    }
+    .ward-card.opacity-50 {
+        cursor: not-allowed;
+    }
+</style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        // Test Form
+        const testSelect = document.getElementById('testAppointmentSelect');
+        const testBtn = document.getElementById('submitTestBtn');
+
+        window.updateLabTestFormAction = function (val) {
+            document.getElementById('labTestForm').action = val ? `/doctor/test-request/${val}/` : '';
+            if (testBtn) testBtn.disabled = !val;
+        };
+
+        window.openTestRequestModal = function (appId, name) {
+            let m = new bootstrap.Modal(document.getElementById('requestLabTestModal'));
+            if (testSelect) {
+                Array.from(testSelect.options).forEach((opt, i) => { if (opt.value === appId) testSelect.selectedIndex = i; });
+                updateLabTestFormAction(appId);
+            }
+            m.show();
+        };
+
+        // Meet Link Modal
+        const meetLinkForm = document.getElementById('meetLinkForm');
+        const meetLinkInput = document.getElementById('meetLinkInput');
+        const autoGenerateToggle = document.getElementById('autoGenerateToggle');
+        const customLinkSection = document.getElementById('customLinkSection');
+        const autoGenerateInfo = document.getElementById('autoGenerateInfo');
+
+        window.openMeetLinkModal = function (appId, patientName, currentLink) {
+            document.getElementById('meetLinkPatientName').textContent = patientName;
+            meetLinkForm.action = `/doctor/update-meet-link/${appId}/`;
+            
+            if (currentLink) {
+                meetLinkInput.value = currentLink;
+                autoGenerateToggle.checked = false;
+                customLinkSection.style.display = 'block';
+                autoGenerateInfo.style.display = 'none';
+            } else {
+                meetLinkInput.value = '';
+                autoGenerateToggle.checked = true;
+                customLinkSection.style.display = 'none';
+                autoGenerateInfo.style.display = 'block';
+            }
+            
+            let m = new bootstrap.Modal(document.getElementById('meetLinkModal'));
+            m.show();
+        };
+
+        if (autoGenerateToggle) {
+            autoGenerateToggle.addEventListener('change', function () {
+                if (this.checked) {
+                    customLinkSection.style.display = 'none';
+                    autoGenerateInfo.style.display = 'block';
+                } else {
+                    customLinkSection.style.display = 'block';
+                    autoGenerateInfo.style.display = 'none';
+                }
+            });
+        }
+
+        // Prescription Form
+        const pSelect = document.getElementById('prescAppointmentSelect');
+        const pBtn = document.getElementById('submitPrescBtn');
+        const pForm = document.getElementById('prescriptionForm');
+        const medList = document.getElementById('medicineList');
+        const compMeds = document.getElementById('compiledMedicines');
+
+        window.updatePrescriptionFormAction = function (val) {
+            pForm.action = val ? `/doctor/prescription/${val}/` : '';
+            if (pBtn) pBtn.disabled = !val;
+        };
+
+        window.openPrescriptionModal = function (appId, name, patientId) {
+            let m = new bootstrap.Modal(document.getElementById('addPrescriptionModal'));
+            if (pSelect) {
+                Array.from(pSelect.options).forEach((opt, i) => { if (opt.value === appId) pSelect.selectedIndex = i; });
+                updatePrescriptionFormAction(appId);
+            }
+
+            // Fetch past prescription
+            if (patientId) {
+                fetch(`/doctor/past-prescription/${patientId}/`)
+                    .then(r => r.json())
+                    .then(data => {
+                        if (data.success) {
+                            // populate notes
+                            document.getElementById('prescNotes').value = data.notes || '';
+
+                            // populate medicines if text is present
+                            let medText = data.medicines || "";
+                            let lines = [];
+
+                            try {
+                                // Attempt to parse old JSON format
+                                let parsedJson = JSON.parse(medText);
+                                if (Array.isArray(parsedJson)) {
+                                    lines = parsedJson.map((item, idx) => {
+                                        // Reconstruct the text format purely for the logic below, 
+                                        // or better yet, just extract the fields
+                                        return {
+                                            name: item.name || '',
+                                            timing: item.timing || 'Morning',
+                                            condition: item.condition || 'After Food'
+                                        };
+                                    });
+                                }
+                            } catch (e) {
+                                // Fallback to text format: 1. Name - Timing (Condition)\n
+                                let rawLines = medText.split('\n').filter(l => l.trim().length > 0 && l.trim() !== "Prescription Details:" && l.trim() !== "No Medicines Prescribed");
+
+                                lines = rawLines.map(line => {
+                                    let cleanLine = line.replace(/^\d+\.\s*/, '');
+                                    let nameParts = cleanLine.split(' - ');
+                                    let name = nameParts[0] || '';
+                                    let rest = nameParts[1] || '';
+
+                                    let timing = rest.split(' (')[0] || 'Morning';
+                                    let condition = rest.includes('(') ? rest.split(' (')[1].replace(')', '') : 'After Food';
+
+                                    return { name, timing, condition };
+                                });
+                            }
+
+                            // Clear existing med logic...
+                            let items = medList.querySelectorAll('.medicine-item');
+                            for (let i = 1; i < items.length; i++) {
+                                items[i].remove();
+                            }
+
+                            // Handle Need Medicines Toggle logic
+                            const needMedToggle = document.getElementById('needMedicineToggle');
+                            const medSection = document.getElementById('medicineSectionBody');
+
+                            if (lines.length > 0) {
+                                needMedToggle.checked = true;
+                                medSection.style.display = 'block';
+
+                                let firstItem = medList.querySelector('.medicine-item');
+                                lines.forEach((medData, index) => {
+                                    let itemRow = index === 0 ? firstItem : firstItem.cloneNode(true);
+
+                                    if (index > 0) {
+                                        itemRow.querySelector('.remove-med-btn').style.display = 'inline-block';
+                                        itemRow.querySelector('.remove-med-btn').onclick = () => itemRow.remove();
+                                        medList.appendChild(itemRow);
+                                    }
+
+                                    itemRow.querySelector('.med-name').value = medData.name;
+
+                                    // try to match timing/condition select options
+                                    let timingSelect = itemRow.querySelector('.med-timing');
+                                    let timingFound = false;
+                                    Array.from(timingSelect.options).forEach(o => {
+                                        if (o.value === medData.timing) { o.selected = true; timingFound = true; }
+                                    });
+                                    if (!timingFound && timingSelect.options.length > 0) timingSelect.options[0].selected = true;
+
+                                    let condSelect = itemRow.querySelector('.med-condition');
+                                    let condFound = false;
+                                    Array.from(condSelect.options).forEach(o => {
+                                        if (o.value === medData.condition) { o.selected = true; condFound = true; }
+                                    });
+                                    if (!condFound && condSelect.options.length > 0) condSelect.options[0].selected = true;
+                                });
+                            } else {
+                                // Just clear first row and uncheck the toggle
+                                needMedToggle.checked = false;
+                                medSection.style.display = 'none';
+                                let firstItem = medList.querySelector('.medicine-item');
+                                firstItem.querySelector('.med-name').value = '';
+                            }
+                        }
+                    })
+                    .catch(e => console.error("Error fetching past prescription", e));
+            }
+
+            m.show();
+        };
+
+        if (document.getElementById('addMedicineBtn')) {
+            document.getElementById('addMedicineBtn').addEventListener('click', function () {
+                let clone = medList.querySelector('.medicine-item').cloneNode(true);
+                clone.querySelectorAll('input').forEach(i => i.value = '');
+                clone.querySelector('.remove-med-btn').style.display = 'inline-block';
+                clone.querySelector('.remove-med-btn').onclick = () => clone.remove();
+                medList.appendChild(clone);
+            });
+        }
+
+        if (document.getElementById('needMedicineToggle')) {
+            document.getElementById('needMedicineToggle').addEventListener('change', function () {
+                const medSection = document.getElementById('medicineSectionBody');
+                if (this.checked) {
+                    medSection.style.display = 'block';
+                } else {
+                    medSection.style.display = 'none';
+                }
+            });
+        }
+
+        if (pForm) {
+            pForm.addEventListener('submit', function (e) {
+                let txt = "Prescription Details:\n";
+                let validMeds = false;
+
+                const needsMed = document.getElementById('needMedicineToggle').checked;
+
+                if (needsMed) {
+                    medList.querySelectorAll('.medicine-item').forEach((item, idx) => {
+                        let n = item.querySelector('.med-name').value.trim();
+                        let t = item.querySelector('.med-timing').value;
+                        let c = item.querySelector('.med-condition').value;
+                        if (n) { txt += `${idx + 1}. ${n} - ${t} (${c})\n`; validMeds = true; }
+                    });
+                }
+
+                let notesVal = document.getElementById('prescNotes').value.trim();
+
+                // Check if any lab tests are selected
+                const hasTests = document.querySelectorAll('input[name="test_name"]:checked').length > 0;
+
+                if (needsMed && !validMeds && !hasTests && !notesVal) {
+                    e.preventDefault();
+                    alert('Please enter at least one medicine, lab test, or prescription notes.');
+                    return false;
+                }
+
+                compMeds.value = needsMed && validMeds ? txt : "No Medicines Prescribed";
+                
+                // Enable submit button if medicines, tests, or notes are present
+                if ((needsMed && validMeds) || hasTests || notesVal) {
+                    pBtn.disabled = false;
+                }
+            });
+        }
+
+        // Lab Test Toggle in Prescription Modal
+        if (document.getElementById('needLabTestToggle')) {
+            document.getElementById('needLabTestToggle').addEventListener('change', function () {
+                const labSection = document.getElementById('labTestSectionBody');
+                if (this.checked) {
+                    labSection.style.display = 'block';
+                } else {
+                    labSection.style.display = 'none';
+                }
+            });
+        }
+
+        // Enable submit button when lab tests are selected
+        document.addEventListener('change', function(e) {
+            if (e.target && e.target.name === 'test_name') {
+                const hasTests = document.querySelectorAll('input[name="test_name"]:checked').length > 0;
+                if (hasTests) {
+                    pBtn.disabled = false;
+                }
+            }
+        });
+
+        // Admit Patient Modal
+        const wardsData = [
+            {% for ward in wards %}
+            { id: '{{ ward.id }}', number: '{{ ward.ward_number }}', type: '{{ ward.ward_type }}', available: {{ ward.available_beds }}, total: {{ ward.total_beds }} }{% if not forloop.last %},{% endif %}
+            {% endfor %}
+        ];
+
+        window.openAdmitModal = function (patientId, patientName) {
+            document.getElementById('admitPatientName').textContent = patientName;
+            document.getElementById('admitPatientId').value = patientId;
+            document.getElementById('admitWardId').value = '';
+            document.getElementById('wardRequiredMsg').classList.add('d-none');
+
+            // Populate ward cards
+            const container = document.getElementById('wardCardsContainer');
+            container.innerHTML = '';
+
+            if (wardsData.length === 0) {
+                container.innerHTML = '<div class="col-12 text-center text-muted py-3"><i class="fas fa-exclamation-circle me-1"></i>No wards configured. Please add wards first.</div>';
+            } else {
+                wardsData.forEach(function (ward) {
+                    const isFull = ward.available <= 0;
+                    const occupancyPct = ward.total > 0 ? Math.round((ward.total - ward.available) / ward.total * 100) : 0;
+                    let badgeClass = 'bg-success';
+                    if (isFull) badgeClass = 'bg-danger';
+                    else if (occupancyPct > 80) badgeClass = 'bg-warning text-dark';
+
+                    const col = document.createElement('div');
+                    col.className = 'col-md-6';
+                    col.innerHTML = `
+                        <div class="ward-card card border rounded-3 p-3 cursor-pointer ${isFull ? 'opacity-50' : ''}" 
+                             data-ward-id="${ward.id}" data-available="${ward.available}" 
+                             style="transition: all 0.2s; ${isFull ? 'pointer-events:none;' : ''}">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div>
+                                    <h6 class="fw-bold mb-1"><i class="fas fa-hospital me-1 text-primary"></i>${ward.number}</h6>
+                                    <span class="badge bg-primary bg-opacity-10 text-primary rounded-pill small">${ward.type}</span>
+                                </div>
+                                <span class="badge ${badgeClass} rounded-pill">
+                                    ${isFull ? 'FULL' : ward.available + ' available'}
+                                </span>
+                            </div>
+                            <div class="mt-2">
+                                <div class="d-flex justify-content-between small text-muted mb-1">
+                                    <span>Bed Utilization</span>
+                                    <span>${ward.total - ward.available} / ${ward.total} beds</span>
+                                </div>
+                                <div class="progress" style="height: 6px;">
+                                    <div class="progress-bar ${isFull ? 'bg-danger' : occupancyPct > 80 ? 'bg-warning' : 'bg-success'}" 
+                                         style="width: ${occupancyPct}%"></div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                    container.appendChild(col);
+
+                    if (!isFull) {
+                        col.querySelector('.ward-card').addEventListener('click', function () {
+                            // Deselect all
+                            container.querySelectorAll('.ward-card').forEach(c => {
+                                c.classList.remove('border-primary', 'border-2', 'bg-primary', 'bg-opacity-10');
+                            });
+                            // Select this
+                            this.classList.add('border-primary', 'border-2', 'bg-primary', 'bg-opacity-10');
+                            document.getElementById('admitWardId').value = ward.id;
+                            document.getElementById('wardRequiredMsg').classList.add('d-none');
+                        });
+                    }
+                });
+            }
+
+            let m = new bootstrap.Modal(document.getElementById('admitPatientModal'));
+            m.show();
+        };
+
+        // Admit Form Validation
+        const admitForm = document.getElementById('admitForm');
+        if (admitForm) {
+            admitForm.addEventListener('submit', function (e) {
+                const wardId = document.getElementById('admitWardId').value;
+                if (!wardId) {
+                    e.preventDefault();
+                    document.getElementById('wardRequiredMsg').classList.remove('d-none');
+                    return false;
+                }
+            });
+        }
+
+        // Ambulance Modal
+        window.openAmbulanceModal = function (patientName, patientAddress) {
+            document.getElementById('ambulancePatientName').value = patientName;
+            document.getElementById('ambulancePickupLocation').value = patientAddress || '';
+            let m = new bootstrap.Modal(document.getElementById('ambulanceModal'));
+            m.show();
+        };
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,884 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <meta name="description" content="PHLMS - Professional Healthcare Laboratory Management System">
+    <title>PHLMS - {% block title %}Health System{% endblock %}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #0891b2;
+            --primary-dark: #0e7490;
+            --primary-light: #22d3ee;
+            --secondary-color: #6366f1;
+            --accent-color: #f59e0b;
+            --danger-color: #ef4444;
+            --success-color: #10b981;
+            --dark-color: #0f172a;
+            --light-bg: #f8fafc;
+            --card-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            --glass-bg: rgba(255, 255, 255, 0.85);
+            --glass-border: rgba(255, 255, 255, 0.5);
+        }
+
+        * {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            background-color: var(--light-bg);
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            color: var(--dark-color);
+            overflow-x: hidden;
+        }
+
+        /* Modern Glass Navbar */
+        .navbar {
+            background: var(--glass-bg) !important;
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.3);
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.05);
+            padding: 0.8rem 0;
+        }
+
+        .navbar-brand {
+            font-weight: 800;
+            font-size: 1.6rem;
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .navbar-brand i {
+            font-size: 1.9rem;
+            color: var(--primary-color);
+            -webkit-text-fill-color: var(--primary-color);
+        }
+
+        .nav-link {
+            color: #475569 !important;
+            font-weight: 600;
+            font-size: 0.95rem;
+            padding: 0.6rem 1.2rem !important;
+            border-radius: 12px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+        }
+
+        .nav-link::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            width: 0;
+            height: 2px;
+            background: var(--primary-color);
+            transition: all 0.3s ease;
+            transform: translateX(-50%);
+        }
+
+        .nav-link:hover {
+            color: var(--primary-color) !important;
+            background: rgba(8, 145, 178, 0.08);
+        }
+
+        .nav-link:hover::after {
+            width: 60%;
+        }
+
+        .nav-link.btn-primary {
+            color: white !important;
+        }
+
+        /* User Dropdown */
+        .user-dropdown {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: white;
+            padding: 8px 20px;
+            border-radius: 30px;
+            font-weight: 600;
+            font-size: 0.9rem;
+            box-shadow: 0 4px 15px rgba(8, 145, 178, 0.3);
+        }
+
+        .dropdown-menu {
+            border: none;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.15);
+            border-radius: 16px;
+            padding: 12px;
+            margin-top: 10px;
+            background: white;
+        }
+
+        .dropdown-item {
+            border-radius: 10px;
+            padding: 12px 18px;
+            font-weight: 600;
+            transition: all 0.2s;
+            margin-bottom: 4px;
+        }
+
+        .dropdown-item:hover {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: white;
+            transform: translateX(5px);
+        }
+
+        .dropdown-item.text-danger:hover {
+            background: var(--danger-color);
+            transform: translateX(5px);
+        }
+
+        /* Hero Section */
+        .hero {
+            background: linear-gradient(135deg, #0891b2 0%, #0e7490 30%, #6366f1 100%);
+            border-radius: 24px;
+            padding: 60px;
+            margin-bottom: 3rem;
+            color: white;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 25px 80px rgba(8, 145, 178, 0.35);
+        }
+
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: -30%;
+            right: -10%;
+            width: 500px;
+            height: 500px;
+            background: rgba(255, 255, 255, 0.08);
+            border-radius: 50%;
+            animation: pulse 8s ease-in-out infinite;
+        }
+
+        .hero::after {
+            content: '';
+            position: absolute;
+            bottom: -20%;
+            left: -10%;
+            width: 400px;
+            height: 400px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 50%;
+            animation: pulse 10s ease-in-out infinite reverse;
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                transform: scale(1);
+                opacity: 0.5;
+            }
+
+            50% {
+                transform: scale(1.1);
+                opacity: 0.8;
+            }
+        }
+
+        .hero h1 {
+            font-weight: 800;
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            letter-spacing: -0.02em;
+            position: relative;
+            z-index: 1;
+        }
+
+        .hero p {
+            font-size: 1.15rem;
+            opacity: 0.95;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Cards */
+        .card {
+            border: none;
+            border-radius: 20px;
+            box-shadow: var(--card-shadow);
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            background: white;
+        }
+
+        .card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.12);
+        }
+
+        /* Quick Links */
+        .quick-link-card {
+            cursor: pointer;
+            border-radius: 20px;
+            padding: 30px;
+            background: white;
+            border: 2px solid transparent;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .quick-link-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            opacity: 0;
+            transition: all 0.4s ease;
+            z-index: 0;
+        }
+
+        .quick-link-card:hover {
+            border-color: var(--primary-color);
+            transform: translateY(-5px);
+        }
+
+        .quick-link-card:hover::before {
+            opacity: 0.03;
+        }
+
+        .quick-link-card>* {
+            position: relative;
+            z-index: 1;
+        }
+
+        .quick-link-icon {
+            width: 70px;
+            height: 70px;
+            border-radius: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.7rem;
+            margin-bottom: 18px;
+            transition: all 0.3s ease;
+        }
+
+        .quick-link-card:hover .quick-link-icon {
+            transform: scale(1.1) rotate(5deg);
+        }
+
+        .icon-teal {
+            background: linear-gradient(135deg, rgba(8, 145, 178, 0.15), rgba(8, 145, 178, 0.25));
+            color: var(--primary-color);
+        }
+
+        .icon-blue {
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.15), rgba(99, 102, 241, 0.25));
+            color: var(--secondary-color);
+        }
+
+        .icon-amber {
+            background: linear-gradient(135deg, rgba(245, 158, 11, 0.15), rgba(245, 158, 11, 0.25));
+            color: var(--accent-color);
+        }
+
+        .icon-red {
+            background: linear-gradient(135deg, rgba(239, 68, 68, 0.15), rgba(239, 68, 68, 0.25));
+            color: var(--danger-color);
+        }
+
+        .icon-green {
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.15), rgba(16, 185, 129, 0.25));
+            color: var(--success-color);
+        }
+
+        /* Buttons */
+        .btn {
+            border-radius: 12px;
+            font-weight: 600;
+            padding: 12px 24px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            font-size: 0.95rem;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+            border: none;
+            box-shadow: 0 4px 15px rgba(8, 145, 178, 0.3);
+        }
+
+        .btn-primary:hover {
+            background: linear-gradient(135deg, var(--primary-dark), var(--primary-color));
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(8, 145, 178, 0.4);
+        }
+
+        .btn-outline-primary {
+            color: var(--primary-color);
+            border: 2px solid var(--primary-color);
+        }
+
+        .btn-outline-primary:hover {
+            background: var(--primary-color);
+            color: white;
+            transform: translateY(-2px);
+        }
+
+        /* Floating CTA */
+        .book-cta {
+            position: fixed;
+            right: 30px;
+            bottom: 30px;
+            z-index: 1000;
+        }
+
+        .book-cta .btn {
+            background: linear-gradient(135deg, var(--accent-color), #d97706);
+            border: none;
+            padding: 18px 30px;
+            border-radius: 50px;
+            font-weight: 700;
+            box-shadow: 0 10px 35px rgba(245, 158, 11, 0.4);
+            font-size: 1rem;
+        }
+
+        .book-cta .btn:hover {
+            transform: translateY(-5px) scale(1.02);
+            box-shadow: 0 15px 45px rgba(245, 158, 11, 0.5);
+        }
+
+        /* Main content */
+        .main-content {
+            margin-bottom: 100px;
+        }
+
+        /* How it works section */
+        .how-it-works {
+            background: white;
+            border-radius: 24px;
+            padding: 50px;
+            margin-top: 40px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.06);
+        }
+
+        .step-icon {
+            width: 90px;
+            height: 90px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2.2rem;
+            margin: 0 auto 25px;
+            box-shadow: 0 10px 30px rgba(8, 145, 178, 0.3);
+            transition: all 0.3s ease;
+        }
+
+        .step-icon:hover {
+            transform: scale(1.1) rotate(5deg);
+            box-shadow: 0 15px 40px rgba(8, 145, 178, 0.4);
+        }
+
+        /* Footer */
+        .site-footer {
+            background: linear-gradient(135deg, #0f172a, #1e293b);
+            color: white;
+            padding: 50px 0 30px;
+            margin-top: 60px;
+        }
+
+        .footer-title {
+            font-weight: 700;
+            font-size: 1.2rem;
+            margin-bottom: 20px;
+            color: var(--primary-light);
+        }
+
+        .footer-link {
+            color: #94a3b8;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            display: block;
+            margin-bottom: 10px;
+        }
+
+        .footer-link:hover {
+            color: white;
+            transform: translateX(5px);
+        }
+
+        .footer-bottom {
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            padding-top: 25px;
+            margin-top: 30px;
+        }
+
+        /* Animations */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .animate-fade-in {
+            animation: fadeInUp 0.6s ease forwards;
+        }
+
+        .delay-1 {
+            animation-delay: 0.1s;
+        }
+
+        .delay-2 {
+            animation-delay: 0.2s;
+        }
+
+        .delay-3 {
+            animation-delay: 0.3s;
+        }
+
+        .delay-4 {
+            animation-delay: 0.4s;
+        }
+
+        /* Toast styling */
+        .toast {
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+        }
+
+        @media (max-width: 768px) {
+            .hero {
+                padding: 35px;
+            }
+
+            .hero h1 {
+                font-size: 2rem;
+            }
+
+            .hero p {
+                font-size: 1rem;
+            }
+
+            .book-cta {
+                right: 15px;
+                bottom: 15px;
+            }
+
+            .how-it-works {
+                padding: 30px;
+            }
+        }
+    </style>
+    {% block extra_css %}{% endblock %}
+</head>
+
+<body>
+    <!-- Emergency Alert Modal -->
+    <div class="modal fade" id="emergencyAlertModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow-lg" style="border-left: 10px solid #dc3545;">
+                <div class="modal-header bg-danger text-white">
+                    <h5 class="modal-title fw-bold"><i class="fas fa-ambulance fa-shake me-2"></i>EMERGENCY ALERT</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                        aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <h4 class="fw-bold mb-3" id="alertPatientName"></h4>
+                    <p class="mb-2"><strong class="text-danger">Severity:</strong> <span id="alertSeverity"></span></p>
+                    <p class="mb-2"><strong>Symptoms:</strong> <span id="alertSymptoms"></span></p>
+                    <p class="mb-3"><strong>Assigned To:</strong> <span id="alertAssignedTo"
+                            class="badge bg-warning text-dark fs-6"></span></p>
+                    <div class="alert alert-light border small text-muted">
+                        <i class="fas fa-info-circle me-1"></i>Reported at <span id="alertTime"></span>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Acknowledge</button>
+                    <a href="#" class="btn btn-danger fw-bold" id="viewCaseBtn">View Details</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Container -->
+    <div class="toast-container position-fixed bottom-0 end-0 p-3" id="toastContainer" style="z-index: 1055;"></div>
+
+    <!-- Sound Control Button (Hidden by default, shown if audio fails) -->
+    <div id="soundControl" class="position-fixed bottom-0 start-0 p-3" style="z-index: 1055; display:none;">
+        <button class="btn btn-warning shadow-sm rounded-pill" onclick="unlockAudio()">
+            <i class="fas fa-volume-up me-2"></i>Enable Sounds
+        </button>
+    </div>
+
+    <script>
+        let audioUnlocked = false;
+        
+        function unlockAudio() {
+            // Play a short silent buffer to unlock audio context
+            const silentAudio = new Audio('https://actions.google.com/sounds/v1/alarms/beep_short.ogg');
+            silentAudio.play().then(() => {
+                audioUnlocked = true;
+                document.getElementById('soundControl').style.display = 'none';
+                console.log('Audio system unlocked');
+            }).catch(e => {
+                console.warn('Audio unlock still failed', e);
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', function () {
+            // Check for Django messages and play sound if they involve emergency
+            const djangoMessages = document.querySelectorAll('.alert');
+            djangoMessages.forEach(msg => {
+                const text = msg.innerText.toLowerCase();
+                if (text.includes('emergency') || text.includes('hazard') || text.includes('urgent')) {
+                    const audio = new Audio('https://actions.google.com/sounds/v1/alarms/alarm_clock.ogg');
+                    audio.play().catch(e => {
+                        console.log('Django message audio blocked, showing unlock button');
+                        document.getElementById('soundControl').style.display = 'block';
+                    });
+                }
+            });
+
+            // Emergency Polling
+            let lastSeenCaseId = localStorage.getItem('lastSeenCaseId') || 0;
+
+            // Notification State
+            const notificationState = JSON.parse(localStorage.getItem('notificationState') || '{}');
+
+            setInterval(function () {
+                // 1. Emergency Poll
+                fetch("{% url 'get_emergency_notifications' %}")
+                    .then(response => { if (response.ok) return response.json(); })
+                    .then(data => {
+                        if (data && data.cases && data.cases.length > 0) {
+                            const latestCase = data.cases[0];
+                            if (latestCase.id > lastSeenCaseId) {
+                                document.getElementById('alertPatientName').innerText = latestCase.patient;
+                                document.getElementById('alertSeverity').innerText = latestCase.severity.toUpperCase();
+                                document.getElementById('alertSymptoms').innerText = latestCase.symptoms;
+                                document.getElementById('alertAssignedTo').innerText = latestCase.assigned_name;
+                                document.getElementById('alertTime').innerText = latestCase.created_at;
+                                var myModal = new bootstrap.Modal(document.getElementById('emergencyAlertModal'));
+                                myModal.show();
+                                
+                                // Play Siren Sound for Global Emergency Appears
+                                const sirenAudio = new Audio('https://actions.google.com/sounds/v1/alarms/fire_alarm_classic.ogg');
+                                sirenAudio.play().catch(e => {
+                                    console.log('Global siren blocked', e);
+                                    document.getElementById('soundControl').style.display = 'block';
+                                });
+                                
+                                lastSeenCaseId = latestCase.id;
+                                localStorage.setItem('lastSeenCaseId', lastSeenCaseId);
+                            }
+                        }
+                    })
+                    .catch(e => console.log('Emergency poll error', e));
+
+                // 2. Staff Health Poll
+                fetch("{% url 'check_staff_notifications' %}")
+                    .then(response => { if (response.ok) return response.json(); })
+                    .then(data => {
+                        if (data && data.notifications) {
+                            data.notifications.forEach(notif => {
+                                // Check if we showed this recently (e.g. in last 60 mins)
+                                const lastShown = notificationState[notif.id];
+                                const now = Date.now();
+                                if (!lastShown || (now - lastShown > 3600000) || notif.id.startsWith('notif_')) { // Always show new DB notifs
+                                    // For DB notifications, we only show if we haven't acknowledged them (via close)
+                                    // But logic here says if we showed it recently. 
+                                    // Let's rely on the backend 'is_read' for DB notifs.
+                                    if (notif.id.startsWith('notif_')) {
+                                        if (!lastShown) {
+                                            showToast(notif.title, notif.message, notif.type, notif.id, notif.link);
+                                            notificationState[notif.id] = now;
+                                            localStorage.setItem('notificationState', JSON.stringify(notificationState));
+                                        }
+                                    } else {
+                                        // Standard logic for reminders
+                                        if (!lastShown || (now - lastShown > 3600000)) {
+                                            showToast(notif.title, notif.message, notif.type || 'info');
+                                            notificationState[notif.id] = now;
+                                            localStorage.setItem('notificationState', JSON.stringify(notificationState));
+                                        }
+                                    }
+                                }
+                            });
+                        }
+                    })
+                    .catch(e => console.log('Staff poll error', e));
+
+            }, 10000); // Check every 10s
+
+            function showToast(title, message, type = 'primary', notifId = null, link = null) {
+                const container = document.getElementById('toastContainer');
+                const id = 'toast_' + Date.now();
+                const icon = type === 'danger' ? 'exclamation-circle' : 'info-circle';
+
+                // Play sound for danger
+                    if (type === 'danger') {
+                        // Check if title implies emergency or standard ring
+                        let soundUrl = 'https://actions.google.com/sounds/v1/alarms/beep_short.ogg';
+                        if (title.includes('Emergency') || title.includes('🚨')) {
+                            soundUrl = 'https://actions.google.com/sounds/v1/alarms/fire_alarm_classic.ogg'; // More reliable siren
+                        } else if (title.includes('Alert')) {
+                            soundUrl = 'https://actions.google.com/sounds/v1/alarms/alarm_clock.ogg'; // Ringing
+                        }
+                        const audio = new Audio(soundUrl);
+                        audio.play().catch(e => {
+                            console.log('Danger toast audio blocked', e);
+                            document.getElementById('soundControl').style.display = 'block';
+                        });
+                    } else if (type === 'warning' && (title.includes('Take a Break') || title.includes('Hydration Check'))) {
+                        const audio = new Audio('https://actions.google.com/sounds/v1/water/humidifier_bubble.ogg'); // Mild alert
+                        audio.play().catch(e => {
+                            console.log('Warning toast audio blocked', e);
+                            document.getElementById('soundControl').style.display = 'block';
+                        });
+                    }
+
+                const html = `
+                <div id="${id}" class="toast align-items-center text-white bg-${type} border-0" role="alert" aria-live="assertive" aria-atomic="true">
+                  <div class="d-flex">
+                    <div class="toast-body">
+                      <i class="fas fa-${icon} me-2"></i> <strong>${title}</strong><br>
+                      ${message}
+                      ${link ? `<div class="mt-2 pt-2 border-top">
+                        <a href="${link}" target="_blank" class="btn btn-light btn-sm fw-bold">
+                          <i class="fas fa-video me-1"></i> Join Now
+                        </a>
+                      </div>` : ''}
+                    </div>
+                    <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+                  </div>
+                </div>`;
+
+                container.insertAdjacentHTML('beforeend', html);
+                const toastEl = document.getElementById(id);
+                const toast = new bootstrap.Toast(toastEl);
+                toast.show();
+
+                // Cleanup after hide
+                toastEl.addEventListener('hidden.bs.toast', () => {
+                    toastEl.remove();
+                    // Mark as read if it's a DB notification
+                    if (notifId && notifId.startsWith('notif_')) {
+                        fetch(`/notifications/read/${notifId}/`, {
+                            method: 'POST',
+                            headers: {
+                                'X-CSRFToken': getCookie('csrftoken')
+                            }
+                        });
+                    }
+                });
+            }
+
+            /* Logout: POST to logout URL and redirect to home */
+            function getCookie(name) {
+                let cookieValue = null;
+                if (document.cookie && document.cookie !== '') {
+                    const cookies = document.cookie.split(';');
+                    for (let i = 0; i < cookies.length; i++) {
+                        const cookie = cookies[i].trim();
+                        if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                            cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                            break;
+                        }
+                    }
+                }
+                return cookieValue;
+            }
+
+            try {
+                const logoutUrl = "{% url 'logout' %}";
+                document.querySelectorAll(`a[href="${logoutUrl}"]`).forEach(a => {
+                    a.addEventListener('click', function (e) {
+                        e.preventDefault();
+                        if (confirm('Are you sure you want to logout?')) {
+                            // Create and submit a POST form for logout
+                            const form = document.createElement('form');
+                            form.method = 'POST';
+                            form.action = logoutUrl;
+
+                            const csrfToken = document.createElement('input');
+                            csrfToken.type = 'hidden';
+                            csrfToken.name = 'csrfmiddlewaretoken';
+                            csrfToken.value = getCookie('csrftoken');
+                            form.appendChild(csrfToken);
+
+                            document.body.appendChild(form);
+                            form.submit();
+                        }
+                    });
+                });
+            } catch (e) {
+                console.warn('Logout interception not applied', e);
+            }
+        });
+    </script>
+    <nav class="navbar navbar-expand-lg mb-0 py-3 sticky-top">
+        <div class="container">
+            <a class="navbar-brand" href="{% url 'home' %}">
+                <i class="fas fa-heartbeat"></i> PHLMS
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav mx-auto align-items-center">
+                    <li class="nav-item"><a class="nav-link" href="{% url 'home' %}"><i class="fas fa-home me-1"></i>
+                            Home</a></li>
+                    <li class="nav-item"><a class="nav-link" href="#doctors"><i class="fas fa-user-md me-1"></i> Our
+                            Doctors</a></li>
+                    <li class="nav-item"><a class="nav-link"
+                            href="{% if user.is_authenticated %}{% url 'select_doctor' %}{% else %}{% url 'login' %}?next={% url 'select_doctor' %}{% endif %}"><i
+                                class="fas fa-video me-1"></i> Online Consultation</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'about' %}"><i
+                                class="fas fa-info-circle me-1"></i> About Us</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'contact' %}"><i
+                                class="fas fa-envelope me-1"></i> Contact Us</a></li>
+                </ul>
+                <ul class="navbar-nav align-items-center">
+                    {% if user.is_authenticated and not user.is_superuser %}
+                    <li class="nav-item dropdown">
+                        <a class="nav-link user-dropdown dropdown-toggle" href="#" id="navbarDropdown" role="button"
+                            data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="fas fa-user-circle me-1"></i>{{ user.get_full_name|default:user.username }}
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
+                            {% if user.is_doctor or user.is_staff_member or user.is_lab or user.is_pharmacy %}
+                            <li><a class="dropdown-item" href="{% url 'my_attendance' %}"><i class="fas fa-calendar-check me-2 text-primary"></i>My Attendance</a></li>
+                            {% endif %}
+                            <li><a class="dropdown-item" href="{% url 'change_password' %}"><i
+                                        class="fas fa-key me-2"></i>Change Password</a></li>
+                            <li>
+                                <hr class="dropdown-divider">
+                            </li>
+                            <li><a class="dropdown-item text-danger" href="{% url 'logout' %}"><i
+                                        class="fas fa-sign-out-alt me-2"></i>Logout</a></li>
+                        </ul>
+                    </li>
+                    {% else %}
+                    <li class="nav-item"><a class="nav-link btn btn-primary text-white ms-2" href="{% url 'login' %}"><i
+                                class="fas fa-sign-in-alt me-1"></i> Login</a></li>
+                    {% endif %}
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content - This is where page-specific content goes -->
+    <div class="container main-content pt-4">
+        {% if messages %}
+        {% for message in messages %}
+        <div class="alert alert-{{ message.tags }} alert-dismissible fade show">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+        {% endfor %}
+        {% endif %}
+        {% block content %}{% endblock %}
+    </div>
+    <script>
+        // Quick links now use onclick directly
+    </script>
+
+    <!-- Professional Footer -->
+    <footer class="site-footer">
+        <div class="container">
+            <div class="row g-4">
+                <div class="col-lg-4">
+                    <div class="d-flex align-items-center gap-2 mb-3">
+                        <i class="fas fa-heartbeat fa-2x" style="color: var(--primary-light);"></i>
+                        <span class="fw-bold fs-4">
+                            {% if hospital %}
+                            {{ hospital.name }}
+                            {% elif user.is_authenticated and user.is_hospital_admin and user.hospital_profile %}
+                            {{ user.hospital_profile.name }}
+                            {% else %}
+                            PHLMS
+                            {% endif %}
+                        </span>
+                    </div>
+                    <p class="text-light opacity-75">
+                        {% if hospital and hospital.address %}
+                        {{ hospital.address }}
+                        {% elif user.is_authenticated and user.is_hospital_admin and user.hospital_profile.address %}
+                        {{ user.hospital_profile.address }}
+                        {% else %}
+                        Professional Healthcare Laboratory Management System. Streamlining healthcare operations with
+                        modern technology.
+                        {% endif %}
+                    </p>
+                    <div class="d-flex gap-3 mt-3">
+                        <a href="#" class="text-light opacity-75 fs-5"><i class="fab fa-facebook"></i></a>
+                        <a href="#" class="text-light opacity-75 fs-5"><i class="fab fa-twitter"></i></a>
+                        <a href="#" class="text-light opacity-75 fs-5"><i class="fab fa-linkedin"></i></a>
+                        <a href="#" class="text-light opacity-75 fs-5"><i class="fab fa-instagram"></i></a>
+                    </div>
+                </div>
+                <div class="col-lg-2">
+                    <h6 class="footer-title">Quick Links</h6>
+                    <a href="{% url 'home' %}" class="footer-link"><i class="fas fa-chevron-right me-2"></i>Home</a>
+                    <a href="{% url 'select_doctor' %}" class="footer-link"><i
+                            class="fas fa-chevron-right me-2"></i>Book Appointment</a>
+                    <a href="{% url 'lab_dashboard' %}" class="footer-link"><i class="fas fa-chevron-right me-2"></i>Lab
+                        Reports</a>
+                    <a href="{% url 'pharmacy_dashboard' %}" class="footer-link"><i
+                            class="fas fa-chevron-right me-2"></i>Pharmacy</a>
+                </div>
+                <div class="col-lg-3">
+                    <h6 class="footer-title">Services</h6>
+                    <a href="#" class="footer-link"><i class="fas fa-chevron-right me-2"></i>Blood Tests</a>
+                    <a href="#" class="footer-link"><i class="fas fa-chevron-right me-2"></i>Lab Diagnostics</a>
+                    <a href="#" class="footer-link"><i class="fas fa-chevron-right me-2"></i>Prescription Management</a>
+                    <a href="#" class="footer-link"><i class="fas fa-chevron-right me-2"></i>Health Monitoring</a>
+                </div>
+                <div class="col-lg-3">
+                    <h6 class="footer-title">Contact</h6>
+                    {% if hospital %}
+                    <p class="text-light opacity-75 mb-2"><i class="fas fa-map-marker-alt me-2"></i>{{ hospital.address }}</p>
+                    <p class="text-light opacity-75 mb-2"><i class="fas fa-envelope me-2"></i>{{ hospital.user.email }}
+                    </p>
+                    {% elif user.is_authenticated and user.is_hospital_admin and user.hospital_profile %}
+                    <p class="text-light opacity-75 mb-2"><i class="fas fa-map-marker-alt me-2"></i>{{ user.hospital_profile.address }}</p>
+                    <p class="text-light opacity-75 mb-2"><i class="fas fa-envelope me-2"></i>{{ user.email }}</p>
+                    {% else %}
+                    <p class="text-light opacity-75 mb-2"><i class="fas fa-map-marker-alt me-2"></i>Healthcare Center,
+                        Medical City</p>
+                    <p class="text-light opacity-75 mb-2"><i class="fas fa-phone-alt me-2"></i>+1 234 567 8900</p>
+                    <p class="text-light opacity-75 mb-2"><i class="fas fa-envelope me-2"></i>support@phlms.com</p>
+                    {% endif %}
+                    <p class="text-light opacity-75"><i class="fas fa-clock me-2"></i>24/7 Emergency Support</p>
+                </div>
+            </div>
+            <div class="footer-bottom text-center">
+                <p class="mb-0 text-light opacity-75">&copy; 2026 PHLMS. All rights reserved. | Designed with <i
+                        class="fas fa-heart text-danger"></i> for Healthcare</p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    {% block extra_js %}{% endblock %}
+</body>
+
+</html>

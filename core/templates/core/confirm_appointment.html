@@ -1,0 +1,322 @@
+{% extends 'core/base.html' %}
+
+{% block title %}Confirm Appointment - PHLMS{% endblock %}
+
+{% block extra_css %}
+<style>
+    .booking-card {
+        border: none;
+        border-radius: 20px;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.08);
+        overflow: hidden;
+    }
+
+    .doctor-summary {
+        background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+        color: white;
+        padding: 30px;
+    }
+
+    .info-label {
+        font-size: 0.9rem;
+        color: #6c757d;
+        margin-bottom: 5px;
+        font-weight: 500;
+    }
+
+    .info-value {
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: #2c3e50;
+        margin-bottom: 20px;
+    }
+
+    .consultation-type-card {
+        cursor: pointer;
+        border: 2px solid #e9ecef;
+        border-radius: 12px;
+        padding: 15px;
+        transition: all 0.3s ease;
+    }
+
+    .consultation-type-card:hover {
+        border-color: var(--primary-color);
+        background: #f8ffff;
+    }
+
+    .consultation-type-card.selected {
+        border-color: var(--primary-color);
+        background: #f0fbfc;
+        position: relative;
+    }
+
+    .consultation-type-card.selected::after {
+        content: '\f00c';
+        font-family: 'Font Awesome 5 Free';
+        font-weight: 900;
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        color: var(--primary-color);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            <!-- Progress Steps -->
+            <div class="d-flex justify-content-center mb-5">
+                <div class="d-flex align-items-center">
+                    <div class="bg-success text-white rounded-circle d-flex align-items-center justify-content-center fw-bold"
+                        style="width: 35px; height: 35px;">1</div>
+                    <span class="ms-2 fw-bold text-success">Doctor</span>
+                </div>
+                <div class="mx-3 text-muted">----------</div>
+                <div class="d-flex align-items-center">
+                    <div class="bg-success text-white rounded-circle d-flex align-items-center justify-content-center fw-bold"
+                        style="width: 35px; height: 35px;">2</div>
+                    <span class="ms-2 fw-bold text-success">Slot</span>
+                </div>
+                <div class="mx-3 text-muted">----------</div>
+                <div class="d-flex align-items-center">
+                    <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center fw-bold"
+                        style="width: 35px; height: 35px;">3</div>
+                    <span class="ms-2 fw-bold text-primary">Confirm</span>
+                </div>
+            </div>
+
+            <div class="booking-card bg-white">
+                <div class="row g-0">
+                    <!-- Sidebar: Doctor Summary -->
+                    <div class="col-md-4 doctor-summary">
+                        <div class="text-center mb-4">
+                            {% if doctor.image %}
+                            <img src="{{ doctor.image.url }}" class="rounded-circle border border-3 border-white mb-3"
+                                alt="{{ doctor }}" style="width: 120px; height: 120px; object-fit: cover;">
+                            {% else %}
+                            <div class="rounded-circle bg-white text-primary d-inline-flex align-items-center justify-content-center border border-3 border-white mb-3"
+                                style="width: 120px; height: 120px;">
+                                <i class="fas fa-user-md fa-3x"></i>
+                            </div>
+                            {% endif %}
+                            <h4 class="fw-bold mb-1">Dr. {{ doctor.user.get_full_name }}</h4>
+                            <p class="opacity-75 mb-0">{{ doctor.specialty }}</p>
+                            <span class="badge bg-white text-primary mt-2">{{ doctor.department }}</span>
+                        </div>
+
+                        <div class="border-top border-white border-opacity-25 pt-4">
+                            <h6 class="fw-bold mb-3"><i class="fas fa-calendar-check me-2"></i>Appointment</h6>
+                            <p class="mb-2 opacity-75">Date</p>
+                            <h5 class="mb-3">{{ appointment_date|date:"l, F j, Y" }}</h5>
+                            <p class="mb-2 opacity-75">Time</p>
+                            <h5 class="mb-0">{{ appointment_time|time:"g:i A" }}</h5>
+                        </div>
+                    </div>
+
+                    <!-- Main Content: Patient & Confirmation -->
+                    <div class="col-md-8 p-4 p-md-5">
+                        <h3 class="fw-bold mb-4">Complete Booking</h3>
+
+                        <!-- Patient Info Summary -->
+                        <div class="bg-light rounded-3 p-3 mb-4">
+                            <h6 class="fw-bold text-primary mb-3"><i class="fas fa-user me-2"></i>Patient Details</h6>
+                            <div class="row">
+                                <div class="col-6 mb-2">
+                                    <small class="text-muted d-block">Name</small>
+                                    <span class="fw-bold">{{ patient_details.first_name }} {{ patient_details.last_name }}</span>
+                                </div>
+                                <div class="col-6 mb-2">
+                                    <small class="text-muted d-block">Phone</small>
+                                    <span class="fw-bold">{{ patient_details.phone }}</span>
+                                </div>
+                                <div class="col-12">
+                                    <small class="text-muted d-block">Email</small>
+                                    <span class="fw-bold">{{ patient_details.email }}</span>
+                                </div>
+                            </div>
+                            <div class="row mt-2">
+                                <div class="col-6 mb-2">
+                                    <small class="text-muted d-block">DOB</small>
+                                    <span class="fw-bold">{{ patient_details.date_of_birth }}</span>
+                                </div>
+                                <div class="col-6 mb-2">
+                                    <small class="text-muted d-block">Gender</small>
+                                    <span class="fw-bold">{{ patient_details.gender }}</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <form method="post" id="bookingForm">
+                            <input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}">
+                            <input type="hidden" name="doctor_id" value="{{ doctor.id }}">
+                            <input type="hidden" name="appointment_date" value="{{ appointment_date|date:'Y-m-d' }}">
+                            <input type="hidden" name="appointment_time" value="{{ appointment_time|time:'h:i A' }}">
+
+                            <!-- Consultation Mode -->
+                            <div class="mb-4">
+                                <label class="form-label fw-bold">Consultation Type</label>
+                                <div class="row g-3">
+                                    <div class="col-md-6">
+                                        <div class="consultation-type-card selected"
+                                            onclick="selectType('offline', this)">
+                                            <div class="d-flex align-items-center">
+                                                <div class="bg-light rounded-circle p-2 me-3">
+                                                    <i class="fas fa-hospital-user text-primary fa-lg"></i>
+                                                </div>
+                                                <div>
+                                                    <h6 class="fw-bold mb-0">In-Clinic</h6>
+                                                    <small class="text-muted">Visit hospital</small>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="consultation-type-card" onclick="selectType('online', this)">
+                                            <div class="d-flex align-items-center">
+                                                <div class="bg-light rounded-circle p-2 me-3">
+                                                    <i class="fas fa-video text-primary fa-lg"></i>
+                                                </div>
+                                                <div>
+                                                    <h6 class="fw-bold mb-0">Online Video</h6>
+                                                    <small class="text-muted">Google Meet</small>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <input type="hidden" name="consultation_type" id="consultationType" value="offline">
+                            </div>
+
+                            <!-- Symptoms -->
+                            <div class="mb-4">
+                                <label for="symptoms" class="form-label fw-bold">Symptoms (Optional)</label>
+                                <textarea name="symptoms" id="symptoms" class="form-control" rows="2"
+                                    placeholder="Describe your symptoms briefly..."></textarea>
+                            </div>
+
+                            <!-- Email Verification (If not verified and not logged in) -->
+                            {% if requires_email_verification %}
+                            <div class="mb-4">
+                                <label class="form-label fw-bold">Email Verification</label>
+                                <div class="input-group mb-2">
+                                    <input type="email" class="form-control" id="emailAddress"
+                                        value="{{ patient_details.email }}" readonly>
+                                    <button class="btn btn-outline-primary" type="button" id="sendOtpBtn"
+                                        onclick="sendOTP()">Send OTP</button>
+                                </div>
+                                <div class="input-group" id="otpSection" style="display: none;">
+                                    <input type="text" class="form-control" id="otpInput"
+                                        placeholder="Enter 6-digit OTP">
+                                    <button class="btn btn-success" type="button" onclick="verifyOTP()">Verify</button>
+                                </div>
+                                <div id="verificationStatus" class="mt-2 text-success fw-bold" style="display: none;">
+                                    <i class="fas fa-check-circle me-1"></i> Email Verified
+                                </div>
+                            </div>
+                            {% endif %}
+
+                            <div class="d-grid gap-2">
+                                {% if requires_email_verification %}
+                                <button type="submit" class="btn btn-primary btn-lg" id="confirmBtn" disabled>
+                                    Confirm Booking
+                                </button>
+                                {% else %}
+                                <button type="submit" class="btn btn-primary btn-lg" id="confirmBtn">
+                                    Confirm Booking
+                                </button>
+                                {% endif %}
+                                <a href="{% url 'select_slot' doctor.id %}" class="btn btn-light text-muted">Change
+                                    Slot</a>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    let countdownTimer;
+    let emailVerified = {% if requires_email_verification %}false{% else %} true{% endif %};
+
+    function sendOTP() {
+        const email = document.getElementById('emailAddress').value;
+        if (!email || !email.includes('@')) {
+            alert('Please enter a valid email address');
+            return;
+        }
+
+        const btn = document.getElementById('sendOtpBtn');
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending...';
+
+        fetch('{% url "send_otp" %}', {
+            method: 'POST',
+            body: JSON.stringify({ email: email }),
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token }}'
+            }
+        })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    document.getElementById('otpSection').style.display = 'flex';
+                    btn.innerHTML = 'Resend OTP';
+                    btn.disabled = false; // Add cooldown logic ideally
+                } else {
+                    alert(data.message);
+                    btn.disabled = false;
+                    btn.innerHTML = 'Send OTP';
+                }
+            });
+    }
+
+    function verifyOTP() {
+        const email = document.getElementById('emailAddress').value;
+        const otp = document.getElementById('otpInput').value;
+
+        fetch('{% url "verify_otp" %}', {
+            method: 'POST',
+            body: JSON.stringify({ email: email, otp: otp }),
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token }}'
+            }
+        })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    document.getElementById('otpSection').style.display = 'none';
+                    document.getElementById('sendOtpBtn').style.display = 'none';
+                    document.getElementById('verificationStatus').style.display = 'block';
+                    document.getElementById('confirmBtn').disabled = false;
+                    emailVerified = true;
+                } else {
+                    alert(data.message);
+                }
+            });
+    }
+
+    function selectType(type, element) {
+        document.getElementById('consultationType').value = type;
+        document.querySelectorAll('.consultation-type-card').forEach(el => el.classList.remove('selected'));
+        element.classList.add('selected');
+    }
+
+    // Enable confirm button if logged in (assuming verified) or already verified
+    document.addEventListener('DOMContentLoaded', function () {
+        if (emailVerified) {
+            document.getElementById('confirmBtn').disabled = false;
+            // Hide checking logic if verified
+            const verifySection = document.getElementById('verificationStatus');
+            if (verifySection) verifySection.style.display = 'block';
+        }
+    });
+</script>
+{% endblock %}

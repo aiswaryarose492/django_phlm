@@ -1,0 +1,196 @@
+{% extends 'core/base.html' %}
+
+{% block title %}Select Slot - PHLMS{% endblock %}
+
+{% block extra_css %}
+<style>
+    .booking-steps {
+        display: flex;
+        justify-content: center;
+        margin-bottom: 30px;
+    }
+
+    .step {
+        display: flex;
+        align-items: center;
+    }
+
+    .step-number {
+        width: 35px;
+        height: 35px;
+        border-radius: 50%;
+        background: #e9ecef;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+        margin-right: 10px;
+    }
+
+    .step.active .step-number {
+        background: #0891b2;
+        color: white;
+    }
+
+    .step.completed .step-number {
+        background: #198754;
+        color: white;
+    }
+
+    .step-label {
+        font-weight: 500;
+    }
+
+    .step-connector {
+        width: 60px;
+        height: 2px;
+        background: #e9ecef;
+        margin: 0 15px;
+    }
+
+    .step.completed+.step-connector,
+    .step.active+.step-connector {
+        background: #0891b2;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <!-- Booking Progress -->
+    <div class="booking-steps">
+        <div class="step completed">
+            <div class="step-number">1</div>
+            <div class="step-label">Select Doctor</div>
+        </div>
+        <div class="step-connector"></div>
+        <div class="step completed">
+            <div class="step-number">2</div>
+            <div class="step-label">Your Details</div>
+        </div>
+        <div class="step-connector"></div>
+        <div class="step active">
+            <div class="step-number">3</div>
+            <div class="step-label">Select Slot</div>
+        </div>
+        <div class="step-connector"></div>
+        <div class="step">
+            <div class="step-number">4</div>
+            <div class="step-label">Confirm</div>
+        </div>
+    </div>
+
+    <div class="text-center mb-5">
+        <h2 class="fw-bold">Select Date & Time</h2>
+        <p class="text-muted">Dr. {{ doctor.user.get_full_name }} - {{ doctor.department }}</p>
+    </div>
+
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body p-4">
+                    <form method="get" action="{% url 'confirm_appointment' %}" id="slotForm">
+                        <input type="hidden" name="doctor_id" value="{{ doctor.id }}">
+                        <div class="mb-4">
+                            <label class="form-label fw-bold">Select Date</label>
+                            <div class="row g-2">
+                                {% for date in available_dates %}
+                                <div class="col-4 col-md-3">
+                                    <input type="radio" class="btn-check" name="date" id="date{{ forloop.counter }}"
+                                        value="{{ date|date:'Y-m-d' }}" autocomplete="off">
+                                    <label class="btn btn-outline-primary w-100" for="date{{ forloop.counter }}">
+                                        <div class="small">{{ date|date:"D" }}</div>
+                                        <div class="fs-5">{{ date|date:"d" }}</div>
+                                        <div class="small">{{ date|date:"M" }}</div>
+                                    </label>
+                                </div>
+                                {% empty %}
+                                <div class="col-12 text-center">
+                                    <p class="text-muted">No available dates in the next 2 weeks.</p>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="form-label fw-bold">Select Time</label>
+                            <div class="row g-2">
+                                {% for slot in time_slots %}
+                                <div class="col-3 col-md-2">
+                                    <input type="radio" class="btn-check" name="time" id="time{{ forloop.counter }}"
+                                        value="{{ slot }}" autocomplete="off">
+                                    <label class="btn btn-outline-secondary w-100 text-nowrap"
+                                        for="time{{ forloop.counter }}">{{ slot }}</label>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+
+                        <div class="text-center">
+                            <button type="submit" class="btn btn-primary btn-lg rounded-pill" id="continueBtn" disabled>
+                                Continue to Confirmation <i class="fas fa-arrow-right ms-2"></i>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <div class="text-center mt-4">
+                <a href="{% url 'select_doctor' %}" class="btn btn-outline-secondary">Back to Doctor Selection</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const dateInputs = document.querySelectorAll('input[name="date"]');
+    const timeInputs = document.querySelectorAll('input[name="time"]');
+    const continueBtn = document.getElementById('continueBtn');
+    const form = document.getElementById('slotForm');
+
+    // Booked slots data from view
+    const bookedSlots = {{ booked_slots| safe }};
+
+    function updateTimeSlots() {
+        const selectedDateInput = document.querySelector('input[name="date"]:checked');
+        if (!selectedDateInput) return;
+
+        const date = selectedDateInput.value;
+        const bookedTimes = bookedSlots[date] || [];
+
+        timeInputs.forEach(input => {
+            const label = document.querySelector(`label[for="${input.id}"]`);
+            if (bookedTimes.includes(input.value)) {
+                input.disabled = true;
+                label.classList.add('text-decoration-line-through', 'text-muted', 'bg-light');
+                label.classList.remove('btn-outline-secondary');
+
+                // If this disabled slot was selected, deselect it
+                if (input.checked) {
+                    input.checked = false;
+                }
+            } else {
+                input.disabled = false;
+                label.classList.remove('text-decoration-line-through', 'text-muted', 'bg-light');
+                label.classList.add('btn-outline-secondary');
+            }
+        });
+
+        checkSelection();
+    }
+
+    function checkSelection() {
+        const selectedDate = document.querySelector('input[name="date"]:checked');
+        const selectedTime = document.querySelector('input[name="time"]:checked');
+
+        if (selectedDate && selectedTime) {
+            continueBtn.disabled = false;
+        } else {
+            continueBtn.disabled = true;
+        }
+    }
+
+    dateInputs.forEach(input => input.addEventListener('change', updateTimeSlots));
+    timeInputs.forEach(input => input.addEventListener('change', checkSelection));
+</script>
+{% endblock %}

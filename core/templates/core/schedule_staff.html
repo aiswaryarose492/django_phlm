@@ -1,0 +1,167 @@
+{% extends 'core/base.html' %}
+
+{% block title %}Schedule Staff - PHLMS{% endblock %}
+
+{% block extra_css %}
+<style>
+    .schedule-card {
+        background: white;
+        border-radius: 15px;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.08);
+    }
+    .staff-card {
+        border: none;
+        border-radius: 12px;
+        transition: all 0.3s;
+    }
+    .staff-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+    }
+    .duty-badge {
+        font-size: 0.75rem;
+        padding: 5px 10px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="fw-bold"><i class="fas fa-calendar-alt me-2"></i>Staff Duty Schedule</h2>
+        <a href="{% url 'hospital_dashboard' %}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left me-2"></i>Back to Dashboard
+        </a>
+    </div>
+
+    {% if messages %}
+        {% for message in messages %}
+        <div class="alert alert-{{ message.tags }} alert-dismissible fade show">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+        {% endfor %}
+    {% endif %}
+
+    <!-- Doctor Schedule Section -->
+    <div class="schedule-card p-4 mb-4">
+        <h4 class="fw-bold mb-4"><i class="fas fa-user-md me-2 text-primary"></i>Doctor Schedule</h4>
+        <div class="row g-4">
+            {% for doctor in doctors %}
+            <div class="col-md-6 col-lg-4">
+                <div class="card staff-card h-100">
+                    <div class="card-body">
+                        <h5 class="fw-bold">Dr. {{ doctor.user.get_full_name }}</h5>
+                        <p class="text-muted mb-2">{{ doctor.department }} - {{ doctor.specialty }}</p>
+                        
+                        <form method="post" class="schedule-form">
+                            {% csrf_token %}
+                            <input type="hidden" name="doctor_id" value="{{ doctor.id }}">
+                            
+                            <div class="mb-2">
+                                <label class="form-label small">Available Days</label>
+                                <input type="text" name="available_days" class="form-control form-control-sm" 
+                                       value="{{ doctor.available_days|default:'' }}" 
+                                       placeholder="e.g., Monday, Tuesday, Wednesday">
+                            </div>
+                            
+                            <div class="row mb-2">
+                                <div class="col-6">
+                                    <label class="form-label small">Start Time</label>
+                                    <input type="time" name="duty_start" class="form-control form-control-sm" 
+                                           value="{{ doctor.available_start_time|default:'' }}">
+                                </div>
+                                <div class="col-6">
+                                    <label class="form-label small">End Time</label>
+                                    <input type="time" name="duty_end" class="form-control form-control-sm" 
+                                           value="{{ doctor.available_end_time|default:'' }}">
+                                </div>
+                            </div>
+                            
+                            <button type="submit" class="btn btn-primary btn-sm w-100">
+                                <i class="fas fa-save me-1"></i>Update Schedule
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            {% empty %}
+            <div class="col-12 text-center">
+                <p class="text-muted">No doctors found.</p>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Staff Schedule Section -->
+    <div class="schedule-card p-4">
+        <h4 class="fw-bold mb-4"><i class="fas fa-user-nurse me-2 text-success"></i>Staff Duty Schedule</h4>
+        <div class="row g-4">
+            {% for staff in staff %}
+            <div class="col-md-6 col-lg-4">
+                <div class="card staff-card h-100">
+                    <div class="card-body">
+                        <h5 class="fw-bold">{{ staff.user.get_full_name }}</h5>
+                        <p class="text-muted mb-2">
+                            <span class="badge bg-secondary">{{ staff.role }}</span>
+                        </p>
+                        
+                        {% if staff.duty_date %}
+                        <div class="mb-2">
+                            <span class="badge bg-info duty-badge">
+                                <i class="fas fa-calendar me-1"></i>{{ staff.duty_date }}
+                            </span>
+                        </div>
+                        {% if staff.duty_start and staff.duty_end %}
+                        <p class="small mb-2">
+                            <i class="fas fa-clock me-1"></i>
+                            {{ staff.duty_start }} - {{ staff.duty_end }}
+                        </p>
+                        {% endif %}
+                        {% endif %}
+                        
+                        <form method="post" class="schedule-form">
+                            {% csrf_token %}
+                            <input type="hidden" name="staff_id" value="{{ staff.id }}">
+                            
+                            <div class="mb-2">
+                                <label class="form-label small">Duty Date</label>
+                                <input type="date" name="duty_date" class="form-control form-control-sm" 
+                                       value="{{ staff.duty_date|default:'' }}">
+                            </div>
+                            
+                            <div class="row mb-2">
+                                <div class="col-6">
+                                    <label class="form-label small">Start Time</label>
+                                    <input type="time" name="duty_start" class="form-control form-control-sm" 
+                                           value="{{ staff.duty_start|default:'' }}">
+                                </div>
+                                <div class="col-6">
+                                    <label class="form-label small">End Time</label>
+                                    <input type="time" name="duty_end" class="form-control form-control-sm" 
+                                           value="{{ staff.duty_end|default:'' }}">
+                                </div>
+                            </div>
+                            
+                            <div class="mb-2">
+                                <label class="form-label small">Notes</label>
+                                <textarea name="notes" class="form-control form-control-sm" rows="2" 
+                                          placeholder="Any special instructions">{{ staff.notes|default:'' }}</textarea>
+                            </div>
+                            
+                            <button type="submit" class="btn btn-success btn-sm w-100">
+                                <i class="fas fa-save me-1"></i>Assign Duty
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            {% empty %}
+            <div class="col-12 text-center">
+                <p class="text-muted">No staff found.</p>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock %}

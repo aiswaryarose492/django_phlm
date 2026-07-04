@@ -1,0 +1,144 @@
+{% extends 'core/base.html' %}
+
+{% block title %}About Us - PHLMS{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <!-- Hero Section -->
+    <div class="text-center mb-5">
+        <h1 class="fw-bold">About PHLMS</h1>
+        <p class="lead text-muted">Personal Health & Lifestyle Management System</p>
+    </div>
+    
+    <!-- Mission Section -->
+    <div class="row align-items-center mb-5">
+        <div class="col-lg-6 mb-4 mb-lg-0">
+            <img src="https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?w=600&h=400&fit=crop" alt="Our Hospital" class="img-fluid rounded-4 shadow">
+        </div>
+        <div class="col-lg-6">
+            <h2 class="fw-bold mb-4">Our Mission</h2>
+            <p class="text-muted">At PHLMS, we are committed to revolutionizing healthcare delivery through technology. Our mission is to provide seamless, accessible, and efficient healthcare services to everyone.</p>
+            <p class="text-muted">We believe that quality healthcare should be just a click away. Our integrated platform connects patients, doctors, hospitals, and laboratories on a single unified system.</p>
+            
+            <div class="row g-3 mt-3">
+                <div class="col-6">
+                    <div class="d-flex align-items-center">
+                        <i class="fas fa-check-circle text-primary me-2 fa-lg"></i>
+                        <span>Patient-Centered Care</span>
+                    </div>
+                </div>
+                <div class="col-6">
+                    <div class="d-flex align-items-center">
+                        <i class="fas fa-check-circle text-primary me-2 fa-lg"></i>
+                        <span>Advanced Technology</span>
+                    </div>
+                </div>
+                <div class="col-6">
+                    <div class="d-flex align-items-center">
+                        <i class="fas fa-check-circle text-primary me-2 fa-lg"></i>
+                        <span>Expert Specialists</span>
+                    </div>
+                </div>
+                <div class="col-6">
+                    <div class="d-flex align-items-center">
+                        <i class="fas fa-check-circle text-primary me-2 fa-lg"></i>
+                        <span>24/7 Availability</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Services Section -->
+    <div class="mb-5">
+        <h2 class="fw-bold text-center mb-4">Our Services</h2>
+        <div class="row g-4">
+            <div class="col-md-4">
+                <div class="card border-0 shadow-sm h-100">
+                    <div class="card-body text-center p-4">
+                        <div class="mb-3">
+                            <i class="fas fa-user-md fa-3x text-primary"></i>
+                        </div>
+                        <h5 class="fw-bold">Doctor Consultations</h5>
+                        <p class="text-muted mb-0">Book appointments with expert doctors across various specialties.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card border-0 shadow-sm h-100">
+                    <div class="card-body text-center p-4">
+                        <div class="mb-3">
+                            <i class="fas fa-video fa-3x text-success"></i>
+                        </div>
+                        <h5 class="fw-bold">Online Consultations</h5>
+                        <p class="text-muted mb-0">Get medical advice from home through video consultations.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card border-0 shadow-sm h-100">
+                    <div class="card-body text-center p-4">
+                        <div class="mb-3">
+                            <i class="fas fa-file-medical fa-3x text-info"></i>
+                        </div>
+                        <h5 class="fw-bold">Digital Lab Reports</h5>
+                        <p class="text-muted mb-0">Access your lab reports instantly from anywhere.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Why Choose Us -->
+    <div class="mb-5">
+        <h2 class="fw-bold text-center mb-4">Why Choose PHLMS?</h2>
+        <div class="row g-4">
+            <div class="col-md-3">
+                <div class="text-center">
+                    <div class="mb-3">
+                        <i class="fas fa-users fa-3x text-primary"></i>
+                    </div>
+                    <h4 class="fw-bold">10K+</h4>
+                    <p class="text-muted mb-0">Happy Patients</p>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="text-center">
+                    <div class="mb-3">
+                        <i class="fas fa-user-md fa-3x text-success"></i>
+                    </div>
+                    <h4 class="fw-bold">500+</h4>
+                    <p class="text-muted mb-0">Expert Doctors</p>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="text-center">
+                    <div class="mb-3">
+                        <i class="fas fa-hospital fa-3x text-info"></i>
+                    </div>
+                    <h4 class="fw-bold">50+</h4>
+                    <p class="text-muted mb-0">Medical Centers</p>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="text-center">
+                    <div class="mb-3">
+                        <i class="fas fa-award fa-3x text-warning"></i>
+                    </div>
+                    <h4 class="fw-bold">15+</h4>
+                    <p class="text-muted mb-0">Years Experience</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- CTA -->
+    <div class="text-center">
+        <h3 class="fw-bold mb-3">Ready to Get Started?</h3>
+        <p class="text-muted mb-4">Join thousands of patients who trust PHLMS for their healthcare needs.</p>
+        <a href="{% url 'select_doctor' %}" class="btn btn-primary btn-lg rounded-pill">
+            <i class="fas fa-calendar-check me-2"></i>Book Appointment
+        </a>
+    </div>
+</div>
+{% endblock %}

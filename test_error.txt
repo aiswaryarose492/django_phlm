@@ -1,0 +1,11 @@
+tests_emergency_refinement (unittest.loader._FailedTest.tests_emergency_refinement) ... ERROR
+
+======================================================================
+ERROR: tests_emergency_refinement (unittest.loader._FailedTest.tests_emergency_refinement)
+----------------------------------------------------------------------
+AttributeError: module 'core.tests' has no attribute 'tests_emergency_refinement'
+
+----------------------------------------------------------------------
+Ran 1 test in 0.001s
+
+FAILED (errors=1)

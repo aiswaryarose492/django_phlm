@@ -1,0 +1,161 @@
+{% extends 'core/base.html' %}
+
+{% block title %}Patient Details - PHLMS{% endblock %}
+
+{% block extra_css %}
+<style>
+    .booking-steps {
+        display: flex;
+        justify-content: center;
+        margin-bottom: 30px;
+    }
+
+    .step {
+        display: flex;
+        align-items: center;
+    }
+
+    .step-number {
+        width: 35px;
+        height: 35px;
+        border-radius: 50%;
+        background: #e9ecef;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+        margin-right: 10px;
+    }
+
+    .step.active .step-number {
+        background: #0891b2;
+        color: white;
+    }
+
+    .step.completed .step-number {
+        background: #198754;
+        color: white;
+    }
+
+    .step-label {
+        font-weight: 500;
+    }
+
+    .step-connector {
+        width: 60px;
+        height: 2px;
+        background: #e9ecef;
+        margin: 0 15px;
+    }
+
+    .step.completed+.step-connector,
+    .step.active+.step-connector {
+        background: #0891b2;
+    }
+
+    .form-control:focus {
+        border-color: #0891b2;
+        box-shadow: 0 0 0 0.25rem rgba(8, 145, 178, 0.25);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <!-- Booking Progress -->
+    <div class="booking-steps">
+        <div class="step completed">
+            <div class="step-number">1</div>
+            <div class="step-label">Select Doctor</div>
+        </div>
+        <div class="step-connector"></div>
+        <div class="step active">
+            <div class="step-number">2</div>
+            <div class="step-label">Your Details</div>
+        </div>
+        <div class="step-connector"></div>
+        <div class="step">
+            <div class="step-number">3</div>
+            <div class="step-label">Select Slot</div>
+        </div>
+        <div class="step-connector"></div>
+        <div class="step">
+            <div class="step-number">4</div>
+            <div class="step-label">Confirm</div>
+        </div>
+    </div>
+
+    <div class="text-center mb-4">
+        <h2 class="fw-bold">Patient Details</h2>
+        <p class="text-muted">Enter your details to proceed with booking Dr. {{ doctor.user.get_full_name }}</p>
+    </div>
+
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card border-0 shadow-sm rounded-4">
+                <div class="card-body p-5">
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">First Name</label>
+                                <input type="text" class="form-control rounded-pill py-2 px-3" name="first_name"
+                                    required value="{{ user.first_name }}">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">Last Name</label>
+                                <input type="text" class="form-control rounded-pill py-2 px-3" name="last_name"
+                                    value="{{ user.last_name }}">
+                            </div>
+
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">Email Address</label>
+                                <input type="email" class="form-control rounded-pill py-2 px-3" name="email" required
+                                    value="{{ user.email }}">
+                                <div class="form-text">Verification code will be sent here.</div>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">Phone Number</label>
+                                <div class="input-group">
+                                    <span
+                                        class="input-group-text rounded-start-pill bg-light border-end-0 text-muted">+91</span>
+                                    <input type="tel" class="form-control rounded-end-pill py-2 border-start-0"
+                                        name="phone" pattern="[0-9]{10}" maxlength="10" placeholder="10-digit number"
+                                        required
+                                        value="{% if user.is_authenticated %}{{ user.patient_profile.phone }}{% endif %}">
+                                </div>
+                            </div>
+
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">Date of Birth</label>
+                                <input type="date" class="form-control rounded-pill py-2 px-3" name="date_of_birth"
+                                    required max="{% now 'Y-m-d' %}"
+                                    value="{% if user.is_authenticated and user.patient_profile.date_of_birth %}{{ user.patient_profile.date_of_birth|date:'Y-m-d' }}{% endif %}">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">Gender</label>
+                                <select class="form-select rounded-pill py-2 px-3" name="gender" required>
+                                    <option value="" selected disabled>Select Gender</option>
+                                    <option value="Male">Male</option>
+                                    <option value="Female">Female</option>
+                                    <option value="Other">Other</option>
+                                </select>
+                            </div>
+
+                            <div class="col-12 mt-4">
+                                <button type="submit" class="btn btn-primary rounded-pill w-100 py-3 fw-bold shadow-sm">
+                                    Continue to Slot Selection <i class="fas fa-arrow-right ms-2"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <div class="text-center mt-4">
+                <a href="{% url 'select_doctor' %}" class="btn btn-outline-secondary rounded-pill px-4"> Back</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

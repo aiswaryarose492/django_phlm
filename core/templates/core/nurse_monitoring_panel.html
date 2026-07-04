@@ -1,0 +1,347 @@
+{% extends 'core/base.html' %}
+{% load custom_filters %}
+
+{% block title %}Nurse Dashboard{% endblock %}
+
+{% block content %}
+<style>
+    .stats-card {
+        background: white;
+        border-radius: 15px;
+        padding: 20px;
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+        transition: transform 0.3s;
+    }
+    .stats-card:hover {
+        transform: translateY(-3px);
+    }
+    .stats-icon {
+        width: 50px;
+        height: 50px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.2rem;
+        color: white;
+    }
+    .wellbeing-section {
+        background: white;
+        border-radius: 15px;
+        padding: 20px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+    }
+    .water-container {
+        background: linear-gradient(135deg, #e0f7fa 0%, #b2ebf2 100%);
+        border-radius: 10px;
+        padding: 15px;
+        text-align: center;
+    }
+</style>
+
+<!-- Welcome Section -->
+<div class="welcome-banner mb-4 p-4 rounded-4 shadow-sm position-relative overflow-hidden"
+    style="background: linear-gradient(135deg, rgba(155, 89, 182, 0.1) 0%, rgba(52, 152, 219, 0.1) 100%); border: 1px solid rgba(255,255,255,0.5);">
+    <div class="row align-items-center">
+        <div class="col-md-2 text-center mb-3 mb-md-0">
+            <div class="nurse-avatar shadow-sm mx-auto d-flex align-items-center justify-content-center"
+                style="width: 100px; height: 100px; border-radius: 50%; background: linear-gradient(135deg, #9b59b6, #8e44ad); color: white; font-size: 2.5rem; font-weight: bold; border: 4px solid white;">
+                {% if nurse.user.first_name %}
+                {{ nurse.user.first_name|make_list|first }}
+                {% else %}
+                {{ nurse.user.username|make_list|first|upper }}
+                {% endif %}
+            </div>
+        </div>
+        <div class="col-md-6">
+            <h2 class="fw-bold mb-1" style="color: #2c3e50;">Welcome, {{ nurse.user.get_full_name }}</h2>
+            <p class="text-muted mb-2"><i class="fas fa-user-nurse me-2"></i>Nurse &bull; {{ nurse.hospital.name }}</p>
+            <div class="d-flex align-items-center flex-wrap gap-2 mt-2">
+                <span class="badge rounded-pill bg-{% if current_shift == 'Morning' %}warning text-dark{% elif current_shift == 'Afternoon' %}info{% else %}dark{% endif %} px-3 py-2">
+                    <i class="fas fa-clock me-1"></i> {{ current_shift }} Shift
+                </span>
+                <span class="badge bg-primary px-3 py-2">
+                    <i class="fas fa-users me-1"></i> {{ patients_data|length }} Patients
+                </span>
+            </div>
+        </div>
+        <div class="col-md-4 text-end">
+            <a href="{% url 'dashboard' %}" class="btn btn-outline-secondary rounded-pill">
+                <i class="fas fa-arrow-left me-1"></i>Back
+            </a>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- Left: Patient Monitoring -->
+    <div class="col-lg-8">
+        <!-- Ward Info -->
+        {% if assigned_wards %}
+        <div class="card border-0 shadow-sm rounded-4 mb-4">
+            <div class="card-body p-3">
+                <div class="d-flex align-items-center flex-wrap gap-2">
+                    <span class="fw-bold text-muted me-2"><i class="fas fa-hospital-alt me-1"></i>My Wards:</span>
+                    {% for ward in assigned_wards %}
+                    <span class="badge bg-primary rounded-pill px-3 py-2">
+                        {{ ward.ward_number }} <small>({{ ward.ward_type }})</small>
+                        <span class="ms-1 bg-white text-primary rounded-pill px-2">{{ ward.available_beds }}/{{ ward.total_beds }}</span>
+                    </span>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        {% if patients_data %}
+        <h5 class="fw-bold mb-3"><i class="fas fa-clipboard-list me-2 text-primary"></i>Ward Patients</h5>
+        <div class="row g-3">
+            {% for pd in patients_data %}
+            <div class="col-lg-6">
+                <div class="card border-0 shadow-sm rounded-4 {% if pd.admission.is_serious %}border-danger border-2{% endif %}">
+                    {% if pd.admission.is_serious %}
+                    <div class="card-header bg-danger text-white border-0 rounded-top-4 py-2">
+                        <i class="fas fa-exclamation-triangle me-2"></i>SERIOUS
+                    </div>
+                    {% endif %}
+                    <div class="card-body p-3">
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <div>
+                                <h6 class="fw-bold mb-1">{{ pd.admission.patient.user.get_full_name }}</h6>
+                                <small class="text-muted">
+                                    <i class="fas fa-hospital me-1"></i>{{ pd.admission.ward.ward_number }}
+                                    <span class="mx-1">|</span>
+                                    <i class="fas fa-bed me-1"></i>{{ pd.admission.bed_number|default:"-" }}
+                                </small>
+                            </div>
+                            <span class="badge bg-{% if pd.admission.status == 'Critical' %}danger{% elif pd.admission.status == 'Stable' %}success{% else %}warning{% endif %} rounded-pill">
+                                {{ pd.admission.status }}
+                            </span>
+                        </div>
+
+                        <!-- Task Checklist -->
+                        <div class="mb-2">
+                            <small class="fw-bold text-muted">Tasks ({{ current_shift }})</small>
+                            <div class="d-flex gap-1 mt-1 flex-wrap">
+                                <button class="btn btn-sm btn-outline-success py-0 px-2 mark-task-btn"
+                                    data-admission="{{ pd.admission.id }}" data-task="Medicine" data-shift="{{ current_shift }}"
+                                    onclick="markTask(this)">
+                                    <i class="fas fa-pills me-1"></i>Medicine
+                                </button>
+                                <button class="btn btn-sm btn-outline-danger py-0 px-2 mark-task-btn"
+                                    data-admission="{{ pd.admission.id }}" data-task="Injection" data-shift="{{ current_shift }}"
+                                    onclick="markTask(this)">
+                                    <i class="fas fa-syringe me-1"></i>Injection
+                                </button>
+                                <button class="btn btn-sm btn-outline-warning py-0 px-2 mark-task-btn"
+                                    data-admission="{{ pd.admission.id }}" data-task="Infection" data-shift="{{ current_shift }}"
+                                    onclick="markTask(this)">
+                                    <i class="fas fa-shield-virus me-1"></i>Infection
+                                </button>
+                                <button class="btn btn-sm btn-outline-info py-0 px-2 mark-task-btn"
+                                    data-admission="{{ pd.admission.id }}" data-task="Vitals" data-shift="{{ current_shift }}"
+                                    onclick="markTask(this)">
+                                    <i class="fas fa-heartbeat me-1"></i>Vitals
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Patient Water -->
+                        <div class="input-group input-group-sm" style="max-width: 200px;">
+                            <span class="input-group-text"><i class="fas fa-tint text-info"></i></span>
+                            <input type="number" class="form-control water-input" data-admission="{{ pd.admission.id }}" 
+                                data-shift="{{ current_shift }}" value="0" min="0" max="20" placeholder="Glasses">
+                            <button class="btn btn-info btn-sm" type="button" onclick="saveWater(this)">
+                                <i class="fas fa-save"></i>
+                            </button>
+                        </div>
+
+                        <a href="{% url 'view_admission_details' pd.admission.id %}" class="btn btn-outline-primary btn-sm rounded-pill mt-2 w-100">
+                            <i class="fas fa-eye me-1"></i>View Details
+                        </a>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="card border-0 shadow-sm rounded-4 text-center py-5">
+            <div class="card-body">
+                <i class="fas fa-user-injured fa-3x text-muted mb-3 opacity-25"></i>
+                <h5 class="fw-bold text-muted">No Patients in Your Wards</h5>
+                <p class="text-muted small">{% if not assigned_wards %}You are not assigned to any ward.{% else %}No admitted patients currently.{% endif %}</p>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Right: My Wellbeing -->
+    <div class="col-lg-4">
+        <div class="wellbeing-section">
+            <h5 class="fw-bold mb-4"><i class="fas fa-heartbeat text-danger me-2"></i>My Wellbeing</h5>
+
+            <!-- Water Intake -->
+            <div class="mb-4">
+                <label class="fw-bold mb-2"><i class="fas fa-tint text-info me-1"></i>Water Intake Today</label>
+                <div class="water-container">
+                    <div class="row g-2 text-center">
+                        <div class="col-4">
+                            <div class="bg-warning bg-opacity-25 rounded p-2 mb-1">
+                                <i class="fas fa-sun text-warning"></i>
+                            </div>
+                            <small class="fw-bold d-block">Morning</small>
+                            <div class="input-group input-group-sm justify-content-center mt-1">
+                                <input type="number" class="form-control text-center" id="nurseWaterMorning" 
+                                    value="{{ nurse_water|lookup:'Morning'|lookup:'glasses'|default:'0' }}" min="0" max="15" style="max-width: 50px;">
+                                <button class="btn btn-warning btn-sm py-0" onclick="saveNurseWater('Morning')">
+                                    <i class="fas fa-save"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="col-4">
+                            <div class="bg-info bg-opacity-25 rounded p-2 mb-1">
+                                <i class="fas fa-cloud-sun text-info"></i>
+                            </div>
+                            <small class="fw-bold d-block">Afternoon</small>
+                            <div class="input-group input-group-sm justify-content-center mt-1">
+                                <input type="number" class="form-control text-center" id="nurseWaterAfternoon" 
+                                    value="{{ nurse_water|lookup:'Afternoon'|lookup:'glasses'|default:'0' }}" min="0" max="15" style="max-width: 50px;">
+                                <button class="btn btn-info btn-sm py-0" onclick="saveNurseWater('Afternoon')">
+                                    <i class="fas fa-save"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="col-4">
+                            <div class="bg-dark bg-opacity-25 rounded p-2 mb-1">
+                                <i class="fas fa-moon text-dark"></i>
+                            </div>
+                            <small class="fw-bold d-block">Night</small>
+                            <div class="input-group input-group-sm justify-content-center mt-1">
+                                <input type="number" class="form-control text-center" id="nurseWaterNight" 
+                                    value="{{ nurse_water|lookup:'Night'|lookup:'glasses'|default:'0' }}" min="0" max="15" style="max-width: 50px;">
+                                <button class="btn btn-dark btn-sm py-0" onclick="saveNurseWater('Night')">
+                                    <i class="fas fa-save"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <small class="text-muted d-block mt-2">Target: 8-10 glasses per shift</small>
+                </div>
+            </div>
+
+            <!-- Shift Info -->
+            <div class="mb-4">
+                <label class="fw-bold mb-2"><i class="fas fa-clock text-primary me-1"></i>Current Shift</label>
+                <div class="p-3 rounded-3 bg-primary bg-opacity-10 text-center">
+                    <span class="badge bg-{% if current_shift == 'Morning' %}warning text-dark{% elif current_shift == 'Afternoon' %}info{% else %}dark{% endif %} fs-6 px-4 py-2">
+                        {{ current_shift }} Shift
+                    </span>
+                    <p class="text-muted small mt-2 mb-0">
+                        {% if current_shift == 'Morning' %}6:00 AM - 2:00 PM
+                        {% elif current_shift == 'Afternoon' %}2:00 PM - 10:00 PM
+                        {% else %}10:00 PM - 6:00 AM{% endif %}
+                    </p>
+                </div>
+            </div>
+
+            <!-- Quick Stats -->
+            <div class="mb-3">
+                <label class="fw-bold mb-2"><i class="fas fa-chart-bar text-success me-1"></i>Today's Summary</label>
+                <div class="stats-card mb-2">
+                    <div class="stats-icon" style="background: linear-gradient(135deg, #3498db, #2980b9);">
+                        <i class="fas fa-user-injured"></i>
+                    </div>
+                    <div>
+                        <div class="text-muted small">Patients</div>
+                        <h5 class="fw-bold mb-0">{{ patients_data|length }}</h5>
+                    </div>
+                </div>
+                <div class="stats-card">
+                    <div class="stats-icon" style="background: linear-gradient(135deg, #9b59b6, #8e44ad);">
+                        <i class="fas fa-hospital-alt"></i>
+                    </div>
+                    <div>
+                        <div class="text-muted small">Wards Assigned</div>
+                        <h5 class="fw-bold mb-0">{{ assigned_wards.count }}</h5>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const csrfToken = '{{ csrf_token }}';
+    const currentShift = '{{ current_shift }}';
+
+    function markTask(btn) {
+        const admissionId = btn.dataset.admission;
+        const taskType = btn.dataset.task;
+        const shift = btn.dataset.shift;
+
+        fetch(`/nurse/mark-task/${admissionId}/`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'X-CSRFToken': csrfToken },
+            body: `task_type=${taskType}&shift=${shift}`
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) {
+                btn.outerHTML = `<span class="badge bg-success py-1"><i class="fas fa-check me-1"></i>${taskType} - ${data.completed_by}</span>`;
+                showToast(`${taskType} completed!`, 'success');
+            } else {
+                showToast(data.message, 'danger');
+            }
+        })
+        .catch(() => showToast('Error', 'danger'));
+    }
+
+    function saveWater(btn) {
+        const input = btn.parentElement.querySelector('.water-input');
+        const admissionId = input.dataset.admission;
+        const shift = input.dataset.shift;
+        const glasses = input.value;
+
+        fetch(`/nurse/water-intake/${admissionId}/`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'X-CSRFToken': csrfToken },
+            body: `glasses=${glasses}&shift=${shift}`
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) showToast(`Patient water: ${glasses} glasses`, 'success');
+            else showToast(data.message, 'danger');
+        })
+        .catch(() => showToast('Error', 'danger'));
+    }
+
+    function saveNurseWater(shift) {
+        const input = document.getElementById(`nurseWater${shift}`);
+        const glasses = input.value;
+
+        fetch('/nurse/my-water-intake/', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'X-CSRFToken': csrfToken },
+            body: `glasses=${glasses}&shift=${shift}`
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) showToast(`Your water: ${glasses} glasses saved!`, 'success');
+            else showToast(data.message, 'danger');
+        })
+        .catch(() => showToast('Error', 'danger'));
+    }
+
+    function showToast(message, type) {
+        const toast = document.createElement('div');
+        toast.className = `alert alert-${type} position-fixed top-0 end-0 m-3 rounded-4 shadow`;
+        toast.style.zIndex = '9999';
+        toast.innerHTML = `<i class="fas fa-check-circle me-2"></i>${message}`;
+        document.body.appendChild(toast);
+        setTimeout(() => toast.remove(), 3000);
+    }
+</script>
+{% endblock %}

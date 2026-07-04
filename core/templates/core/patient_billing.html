@@ -1,0 +1,279 @@
+{% extends 'core/base.html' %}
+
+{% block title %}My Billing & Payments{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="d-flex align-items-center justify-content-between mb-4">
+        <div>
+            <h2 class="fw-bold"><i class="fas fa-file-invoice-dollar me-2 text-primary"></i>My Billing & Payments</h2>
+            <p class="text-muted">View your hospital bills and make payments</p>
+        </div>
+        <div>
+            <a href="{% url 'patient_dashboard' %}" class="btn btn-outline-secondary rounded-pill">
+                <i class="fas fa-arrow-left me-2"></i>Back to Dashboard
+            </a>
+        </div>
+    </div>
+
+    <!-- Outstanding Balance Card -->
+    <div class="row g-4 mb-4">
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm rounded-4 bg-danger text-white">
+                <div class="card-body p-4">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-shrink-0">
+                            <i class="fas fa-money-bill-wave fa-2x opacity-75"></i>
+                        </div>
+                        <div class="flex-grow-1 ms-3">
+                            <h6 class="mb-0">Total Outstanding</h6>
+                            <h3 class="fw-bold mb-0">₹{{ total_outstanding }}</h3>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm rounded-4 bg-primary text-white">
+                <div class="card-body p-4">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-shrink-0">
+                            <i class="fas fa-hospital fa-2x opacity-75"></i>
+                        </div>
+                        <div class="flex-grow-1 ms-3">
+                            <h6 class="mb-0">Total Admissions</h6>
+                            <h3 class="fw-bold mb-0">{{ admissions.count }}</h3>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm rounded-4 bg-success text-white">
+                <div class="card-body p-4">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-shrink-0">
+                            <i class="fas fa-check-circle fa-2x opacity-75"></i>
+                        </div>
+                        <div class="flex-grow-1 ms-3">
+                            <h6 class="mb-0">Paid So Far</h6>
+                            <h3 class="fw-bold mb-0">₹{{ admissions|sum_paid }}</h3>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Admissions List -->
+    <div class="row g-4">
+        {% for admission in admissions %}
+        <div class="col-lg-6">
+            <div class="card border-0 shadow-sm rounded-4 h-100">
+                <div class="card-header bg-white border-0 py-3">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h5 class="fw-bold mb-0">Admission #{{ admission.id }}</h5>
+                            <small class="text-muted">{{ admission.admission_date|date:"M d, Y" }}</small>
+                        </div>
+                        <span
+                            class="badge bg-{% if admission.status == 'Discharged' %}success{% elif admission.status == 'Critical' %}danger{% else %}primary{% endif %} rounded-pill">
+                            {{ admission.status }}
+                        </span>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3 mb-3">
+                        <div class="col-6">
+                            <small class="text-muted d-block">Ward</small>
+                            <strong>{{ admission.ward.ward_number|default:"-" }}</strong>
+                        </div>
+                        <div class="col-6">
+                            <small class="text-muted d-block">Bed Number</small>
+                            <strong>{{ admission.bed_number|default:"-" }}</strong>
+                        </div>
+                        <div class="col-6">
+                            <small class="text-muted d-block">Days Admitted</small>
+                            <strong>{{ admission.admission_days }}</strong>
+                        </div>
+                        <div class="col-6">
+                            <small class="text-muted d-block">Doctor</small>
+                            <strong>Dr. {{ admission.admitting_doctor.user.get_full_name|default:"-" }}</strong>
+                        </div>
+                    </div>
+
+                    <hr class="my-3">
+
+                    <div class="row g-3">
+                        <div class="col-4 text-center">
+                            <small class="text-muted d-block">Total Bill</small>
+                            <h5 class="fw-bold mb-0">₹{{ admission.total_bill }}</h5>
+                        </div>
+                        <div class="col-4 text-center">
+                            <small class="text-muted d-block">Paid</small>
+                            <h5 class="fw-bold mb-0 text-success">₹{{ admission.bill_paid }}</h5>
+                        </div>
+                        <div class="col-4 text-center">
+                            <small class="text-muted d-block">Outstanding</small>
+                            <h5
+                                class="fw-bold mb-0 {% if admission.outstanding_amount > 0 %}text-danger{% else %}text-success{% endif %}">
+                                ₹{{ admission.outstanding_amount }}
+                            </h5>
+                        </div>
+                    </div>
+
+                    {% if admission.outstanding_amount > 0 %}
+                    <div class="mt-3">
+                        <button class="btn btn-primary rounded-pill w-100"
+                            onclick="openPaymentModal({{ admission.id }}, {{ admission.outstanding_amount }})">
+                            <i class="fas fa-credit-card me-2"></i>Pay Now
+                        </button>
+                    </div>
+                    {% endif %}
+                </div>
+
+                {% if admission.discharge_summary %}
+                <div class="card-footer bg-light border-0 rounded-bottom-4">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <small class="text-muted">
+                            <i class="fas fa-calendar-check me-1"></i>
+                            Discharged on {{ admission.discharge_summary.discharge_date|date:"M d, Y" }}
+                        </small>
+                        <a href="{% url 'view_admission_details' admission.id %}"
+                            class="btn btn-sm btn-outline-primary rounded-pill">
+                            View Summary
+                        </a>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        {% empty %}
+        <div class="col-12">
+            <div class="card border-0 shadow-sm rounded-4 text-center py-5">
+                <div class="card-body">
+                    <i class="fas fa-file-invoice fa-4x text-muted mb-4 opacity-25"></i>
+                    <h4 class="fw-bold text-muted">No Bills Found</h4>
+                    <p class="text-muted">You don't have any admission records or bills yet.</p>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- Payment Modal -->
+<div class="modal fade" id="paymentModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-4">
+            <div class="modal-header border-0 bg-primary text-white">
+                <h5 class="modal-title fw-bold"><i class="fas fa-credit-card me-2"></i>Make Payment</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="paymentForm">
+                {% csrf_token %}
+                <input type="hidden" id="paymentAdmissionId" name="admission_id">
+                <div class="modal-body">
+                    <div class="text-center mb-4">
+                        <h6 class="text-muted">Outstanding Amount</h6>
+                        <h2 class="fw-bold text-danger">₹<span id="paymentAmount">0</span></h2>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Payment Amount (₹)</label>
+                        <input type="number" name="amount" id="paymentAmountInput" class="form-control" step="0.01"
+                            min="1" required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Payment Method</label>
+                        <div class="row g-2">
+                            <div class="col-6">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="payment_method" id="upi"
+                                        value="UPI" checked>
+                                    <label class="form-check-label" for="upi">
+                                        <i class="fas fa-mobile-alt me-1"></i>UPI
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="payment_method" id="card"
+                                        value="Credit Card">
+                                    <label class="form-check-label" for="card">
+                                        <i class="fas fa-credit-card me-1"></i>Card
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="payment_method" id="netbanking"
+                                        value="Net Banking">
+                                    <label class="form-check-label" for="netbanking">
+                                        <i class="fas fa-university me-1"></i>Net Banking
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="payment_method" id="wallet"
+                                        value="Wallet">
+                                    <label class="form-check-label" for="wallet">
+                                        <i class="fas fa-wallet me-1"></i>Wallet
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="alert alert-info rounded-4">
+                        <small><i class="fas fa-info-circle me-1"></i>
+                            This is a demo payment system. No actual charges will be made.</small>
+                    </div>
+                </div>
+                <div class="modal-footer border-0">
+                    <button type="button" class="btn btn-outline-secondary rounded-pill"
+                        data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary rounded-pill">
+                        <i class="fas fa-lock me-2"></i>Pay Securely
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    function openPaymentModal(admissionId, amount) {
+        document.getElementById('paymentAdmissionId').value = admissionId;
+        document.getElementById('paymentAmount').textContent = amount;
+        document.getElementById('paymentAmountInput').value = amount;
+        document.getElementById('paymentAmountInput').max = amount;
+        new bootstrap.Modal(document.getElementById('paymentModal')).show();
+    }
+
+    // Payment form submission
+    $('#paymentForm').submit(function (e) {
+        e.preventDefault();
+        const admissionId = document.getElementById('paymentAdmissionId').value;
+
+        $.ajax({
+            url: '/patient/payment/' + admissionId + '/',
+            type: 'POST',
+            data: $(this).serialize(),
+            success: function (response) {
+                if (response.success) {
+                    alert('Payment successful! Transaction ID: ' + response.transaction_id);
+                    location.reload();
+                } else {
+                    alert('Payment failed: ' + response.message);
+                }
+            },
+            error: function () {
+                alert('An error occurred during payment. Please try again.');
+            }
+        });
+    });
+</script>
+{% endblock %}

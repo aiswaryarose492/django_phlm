@@ -1,0 +1,260 @@
+{% extends 'core/base.html' %}
+
+{% block title %}Process Test Request - PHLMS{% endblock %}
+
+{% block extra_css %}
+<style>
+    .report-container {
+        background: white;
+        border-radius: 20px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+        overflow: hidden;
+    }
+
+    .patient-info-card {
+        background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+        border-radius: 15px;
+        padding: 20px;
+        margin-bottom: 20px;
+    }
+
+    .status-badge {
+        padding: 8px 20px;
+        border-radius: 25px;
+        font-weight: 600;
+        background: #fef3c7;
+        color: #d97706;
+    }
+
+    .form-control,
+    .form-select {
+        border-radius: 10px;
+        padding: 12px;
+        border: 1px solid #dee2e6;
+    }
+
+    .form-control:focus,
+    .form-select:focus {
+        box-shadow: 0 0 0 4px rgba(13, 148, 136, 0.15);
+        border-color: #0d9488;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-10">
+        <div class="report-container p-5">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h3 class="fw-bold text-teal">
+                    <i class="fas fa-flask me-2"></i>Process Test Request
+                </h3>
+                <a href="{% url 'lab_dashboard' %}" class="btn btn-outline-secondary rounded-pill">
+                    <i class="fas fa-arrow-left me-2"></i>Back to Dashboard
+                </a>
+            </div>
+
+            <!-- Patient Info -->
+            <div class="patient-info-card">
+                <div class="row">
+                    <div class="col-md-6">
+                        <p class="mb-1"><strong>Patient:</strong> {{ req.appointment.patient.user.get_full_name }}</p>
+                        <p class="mb-1"><strong>Test Name:</strong> {{ req.test_name }}</p>
+                        <p class="mb-1"><strong>Doctor:</strong> Dr. {{ req.appointment.doctor.user.last_name }}</p>
+                        {% if req.reason %}
+                        <p class="mb-0 text-danger"><i class="fas fa-info-circle me-1"></i><strong>Reason /
+                                Details:</strong> {{ req.reason }}</p>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-6 text-md-end">
+                        <span class="status-badge">
+                            <i class="fas fa-clock me-1"></i>Pending Request
+                        </span>
+                        <div class="small mt-2 text-muted">Requested at: {{ req.created_at|date:"M d, Y - h:i A" }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row justify-content-center">
+                <!-- Lab Staff Result Form -->
+                <div class="col-lg-10 mb-4">
+                    <h5 class="fw-bold mb-3"><i class="fas fa-edit me-2"></i>Enter Lab Results</h5>
+                    <form method="post" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        <input type="hidden" name="title" value="{{ req.test_name }} Report">
+
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Lab Findings / Results</label>
+
+                            <div id="structuredResults">
+                                <div class="row g-2 mb-2 result-row">
+                                    <div class="col-md-4">
+                                        <input type="text" class="form-control param-name"
+                                            placeholder="Parameter (e.g., Hemoglobin)">
+                                    </div>
+                                    <div class="col-md-3">
+                                        <input type="text" class="form-control param-value"
+                                            placeholder="Observed Value">
+                                    </div>
+                                    <div class="col-md-4">
+                                        <input type="text" class="form-control param-range"
+                                            placeholder="Normal Range (e.g., 12-16 g/dL)">
+                                    </div>
+                                    <div class="col-md-1">
+                                        <button type="button" class="btn btn-outline-danger"
+                                            onclick="this.closest('.result-row').remove()">
+                                            <i class="fas fa-times"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            <button type="button" class="btn btn-sm btn-outline-primary mb-3" onclick="addResultRow()">
+                                <i class="fas fa-plus me-1"></i> Add Parameter
+                            </button>
+
+                            <label class="form-label fw-bold">Additional Notes / Conclusion</label>
+                            <textarea id="additionalNotes" class="form-control mb-3" rows="3"
+                                placeholder="Enter overall conclusion or other findings..."></textarea>
+
+                            <!-- Hidden actual result field -->
+                            <input type="hidden" name="result" id="finalResultText">
+                        </div>
+
+                        <button type="submit" class="btn btn-success rounded-pill w-100 py-3 fw-bold"
+                            onclick="return compileLabResults()">
+                            <i class="fas fa-check-circle me-2"></i>Complete & Save Results
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function addResultRow(name = "", range = "") {
+        const rowHtml = `
+            <div class="row g-2 mb-2 result-row">
+                <div class="col-md-4">
+                    <input type="text" class="form-control param-name" placeholder="Parameter" value="${name}">
+                </div>
+                <div class="col-md-3">
+                    <input type="text" class="form-control param-value" placeholder="Observed Value">
+                </div>
+                <div class="col-md-4">
+                    <input type="text" class="form-control param-range" placeholder="Normal Range" value="${range}">
+                </div>
+                <div class="col-md-1">
+                    <button type="button" class="btn btn-outline-danger" onclick="this.closest('.result-row').remove()"><i class="fas fa-times"></i></button>
+                </div>
+            </div>
+        `;
+        document.getElementById('structuredResults').insertAdjacentHTML('beforeend', rowHtml);
+    }
+
+    function compileLabResults() {
+        const rows = document.querySelectorAll('.result-row');
+        let compiledText = "";
+        let hasParams = false;
+
+        rows.forEach(row => {
+            const name = row.querySelector('.param-name').value.trim();
+            const val = row.querySelector('.param-value').value.trim();
+            const range = row.querySelector('.param-range').value.trim();
+
+            if (name && val) {
+                hasParams = true;
+                if (!compiledText.includes("Lab Results:")) {
+                    compiledText += "Lab Results:\n";
+                }
+                let line = `- ${name}: ${val}`;
+                if (range) line += ` (Normal: ${range})`;
+                compiledText += line + "\n";
+            }
+        });
+
+        const notes = document.getElementById('additionalNotes').value.trim();
+        if (notes) {
+            compiledText += `\nNotes / Conclusion:\n${notes}`;
+        }
+
+        if (!hasParams && !notes) {
+            alert("Please enter at least one result parameter or a note.");
+            return false;
+        }
+
+        document.getElementById('finalResultText').value = compiledText.trim();
+        return true;
+    }
+
+    document.addEventListener("DOMContentLoaded", function () {
+        let testType = "{{ req.test_name|escapejs }}";
+
+        // If the report title contains the actual test name (e.g., "Lab Request: Complete Blood Count (CBC)"), use it
+        if (testType && testType.includes("Lab Request:")) {
+            testType = testType.replace("Lab Request:", "").trim();
+        }
+
+        const predefinedTests = {
+            "Complete Blood Count (CBC)": [
+                { name: "Hemoglobin", range: "12.0 - 17.5 g/dL" },
+                { name: "WBC", range: "4,500 - 11,000 /mcL" },
+                { name: "RBC", range: "4.1 - 5.9 mill/mcL" },
+                { name: "Platelets", range: "150,000 - 450,000 /mcL" },
+                { name: "Hematocrit", range: "36% - 50%" }
+            ],
+            "Urinalysis": [
+                { name: "Color", range: "Pale Yellow to Amber" },
+                { name: "Clarity", range: "Clear" },
+                { name: "Specific Gravity", range: "1.005 - 1.030" },
+                { name: "pH", range: "4.6 - 8.0" },
+                { name: "Protein", range: "Negative" },
+                { name: "Glucose", range: "Negative" }
+            ],
+            "Lipid Panel": [
+                { name: "Total Cholesterol", range: "< 200 mg/dL" },
+                { name: "HDL Cholesterol", range: "> 40 mg/dL" },
+                { name: "LDL Cholesterol", range: "< 100 mg/dL" },
+                { name: "Triglycerides", range: "< 150 mg/dL" }
+            ],
+            "Blood Glucose": [
+                { name: "Fasting Blood Sugar", range: "70 - 99 mg/dL" },
+                { name: "Postprandial Sugar", range: "< 140 mg/dL" },
+                { name: "HbA1c", range: "4.0% - 5.6%" }
+            ],
+            "Thyroid Panel (TSH)": [
+                { name: "TSH", range: "0.4 - 4.0 mIU/L" },
+                { name: "Free T3", range: "2.3 - 4.1 pg/mL" },
+                { name: "Free T4", range: "0.9 - 2.3 ng/dL" }
+            ],
+            "Liver Function Test": [
+                { name: "ALT (SGPT)", range: "7 - 56 U/L" },
+                { name: "AST (SGOT)", range: "8 - 48 U/L" },
+                { name: "ALP", range: "44 - 147 U/L" },
+                { name: "Bilirubin (Total)", range: "0.1 - 1.2 mg/dL" },
+                { name: "Albumin", range: "3.5 - 5.0 g/dL" }
+            ]
+        };
+
+        if (predefinedTests[testType]) {
+            document.getElementById('structuredResults').innerHTML = '';
+            predefinedTests[testType].forEach(param => {
+                addResultRow(param.name, param.range);
+            });
+        } else {
+            const dynamicRange = "{{ reference_range|escapejs }}";
+            if (dynamicRange) {
+                document.getElementById('structuredResults').innerHTML = '';
+                addResultRow(testType, dynamicRange);
+            } else {
+                document.getElementById('structuredResults').innerHTML = '';
+                addResultRow(testType, "");
+            }
+        }
+    });
+</script>
+{% endblock %}

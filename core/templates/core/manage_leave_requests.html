@@ -1,0 +1,108 @@
+{% extends 'core/base.html' %}
+
+{% block title %}Manage Leave Requests - PHLMS{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="text-center mb-5">
+        <h2 class="fw-bold">Leave Requests</h2>
+        <p class="text-muted">Review and manage doctor leave applications</p>
+    </div>
+    
+    {% if messages %}
+    {% for message in messages %}
+    <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+        {{ message }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+    {% endfor %}
+    {% endif %}
+    
+    <div class="card border-0 shadow-sm">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead class="bg-light">
+                        <tr>
+                            <th class="ps-4">Doctor</th>
+                            <th>Leave Type</th>
+                            <th>Start Date</th>
+                            <th>End Date</th>
+                            <th>Reason</th>
+                            <th>Applied</th>
+                            <th class="text-end pe-4">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for leave in pending_leaves %}
+                        <tr>
+                            <td class="ps-4">
+                                <div class="fw-bold">Dr. {{ leave.doctor.user.get_full_name }}</div>
+                                <small class="text-muted">{{ leave.doctor.department }}</small>
+                            </td>
+                            <td>
+                                <span class="badge bg-info">{{ leave.leave_type }}</span>
+                            </td>
+                            <td>{{ leave.start_date|date:"d M Y" }}</td>
+                            <td>{{ leave.end_date|date:"d M Y" }}</td>
+                            <td>
+                                <button class="btn btn-sm btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#reasonModal{{ leave.id }}">
+                                    View Reason
+                                </button>
+                            </td>
+                            <td>{{ leave.applied_at|timesince }} ago</td>
+                            <td class="text-end pe-4">
+                                <form method="post" class="d-inline">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="leave_id" value="{{ leave.id }}">
+                                    <button type="submit" name="action" value="approve" class="btn btn-success btn-sm">
+                                        <i class="fas fa-check me-1"></i> Approve
+                                    </button>
+                                    <button type="submit" name="action" value="reject" class="btn btn-danger btn-sm">
+                                        <i class="fas fa-times me-1"></i> Reject
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                        
+                        <!-- Reason Modal -->
+                        <div class="modal fade" id="reasonModal{{ leave.id }}" tabindex="-1">
+                            <div class="modal-dialog">
+                                <div class="modal-content">
+                                    <div class="modal-header">
+                                        <h5 class="modal-title">Leave Reason</h5>
+                                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                    </div>
+                                    <div class="modal-body">
+                                        <p><strong>Doctor:</strong> Dr. {{ leave.doctor.user.get_full_name }}</p>
+                                        <p><strong>Leave Type:</strong> {{ leave.leave_type }}</p>
+                                        <p><strong>Period:</strong> {{ leave.start_date|date:"d M Y" }} to {{ leave.end_date|date:"d M Y" }}</p>
+                                        <hr>
+                                        <p><strong>Reason:</strong></p>
+                                        <p>{{ leave.reason }}</p>
+                                    </div>
+                                    <div class="modal-footer">
+                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% empty %}
+                        <tr>
+                            <td colspan="7" class="text-center py-4 text-muted">
+                                <i class="fas fa-check-circle fa-2x mb-2 d-block text-success"></i>
+                                No pending leave requests
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    
+    <div class="text-center mt-4">
+        <a href="{% url 'hospital_dashboard' %}" class="btn btn-outline-secondary">Back to Dashboard</a>
+    </div>
+</div>
+{% endblock %}

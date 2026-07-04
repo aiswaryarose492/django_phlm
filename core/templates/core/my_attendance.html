@@ -1,0 +1,135 @@
+{% extends 'core/base.html' %}
+
+{% block title %}My Attendance History & Salary{% endblock %}
+
+{% block extra_css %}
+<style>
+    :root {
+        --primary-teal: #0891b2;
+        --dark-teal: #0e7490;
+    }
+    .header-card {
+        background: linear-gradient(135deg, var(--primary-teal), var(--dark-teal));
+        color: white;
+        border-radius: 18px;
+        padding: 25px;
+        box-shadow: 0 8px 25px rgba(8, 145, 178, 0.3);
+    }
+    .stats-card {
+        background: white;
+        border-radius: 15px;
+        padding: 20px;
+        border-left: 5px solid var(--primary-teal);
+        box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+        height: 100%;
+    }
+    .stats-card h3 { font-size: 2rem; font-weight: 700; margin-bottom: 0; }
+    .status-present { color: #27ae60; background: rgba(46, 204, 113, 0.15); padding: 5px 12px; border-radius: 20px; font-weight: bold; font-size: 0.85rem; }
+    .status-absent { color: #e74c3c; background: rgba(231, 76, 60, 0.15); padding: 5px 12px; border-radius: 20px; font-weight: bold; font-size: 0.85rem; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid mb-5">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="header-card">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="bg-white text-teal rounded-circle d-flex align-items-center justify-content-center fw-bold fs-4" style="width: 60px; height: 60px; color: var(--primary-teal);">
+                        {{ staff_user.first_name|make_list|first|upper|default:staff_user.username|make_list|first|upper }}
+                    </div>
+                    <div>
+                        <h2 class="mb-0 fw-bold">My Attendance & Pay Overview</h2>
+                        <div class="opacity-75"><i class="fas fa-id-badge me-2"></i>{{ role }} | {{ hospital.name }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Alert about policy -->
+    <div class="alert alert-info border-0 shadow-sm rounded-4 mb-4">
+        <i class="fas fa-info-circle me-2"></i> <strong>Notice:</strong> Your hospital deducts <strong>₹{{ hospital.extra_leave_deduction }}</strong> per absent day according to policies.
+    </div>
+
+    <!-- Stats -->
+    <div class="row g-4 mb-4">
+        <div class="col-md-3">
+            <div class="stats-card" style="border-color: #27ae60;">
+                <div class="text-muted fw-bold mb-2">Days Present (Last 30 Days)</div>
+                <h3 class="text-success">{{ days_present }} <span class="fs-6 text-muted fw-normal">/ {{ period_days }}</span></h3>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stats-card" style="border-color: #e74c3c;">
+                <div class="text-muted fw-bold mb-2">Days Absent</div>
+                <h3 class="text-danger">{{ days_absent }} <span class="fs-6 text-muted fw-normal">/ {{ period_days }}</span></h3>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="stats-card border-warning">
+                <div class="text-muted fw-bold mb-2">Estimated Next Pay</div>
+                <div class="d-flex justify-content-between mb-1">
+                    <span>Base {{ salary_frequency }} Salary:</span>
+                    <span class="fw-bold">₹{{ base_salary|floatformat:2 }}</span>
+                </div>
+                <div class="d-flex justify-content-between mb-1 text-danger">
+                    <span>Leave Deduction ({{ days_absent }} days):</span>
+                    <span class="fw-bold">-₹{{ estimated_deduction|floatformat:2 }}</span>
+                </div>
+                <hr class="my-2">
+                <div class="d-flex justify-content-between text-success">
+                    <span class="fw-bold">Estimated Payable:</span>
+                    <span class="fw-bold fs-5">₹{{ estimated_salary|floatformat:2 }}</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- History Table -->
+    <div class="card border-0 shadow-sm rounded-4">
+        <div class="card-body p-4">
+            <h5 class="card-title fw-bold mb-4">My Past 30 Days Record</h5>
+            <div class="table-responsive">
+                <table class="table table-hover align-middle">
+                    <thead class="bg-light">
+                        <tr>
+                            <th>Date</th>
+                            <th>Status</th>
+                            <th>Recorded Hours</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for record in attendance_records %}
+                        <tr>
+                            <td class="fw-bold">{{ record.date|date:"F j, Y (l)" }}</td>
+                            <td>
+                                {% if record.is_present %}
+                                <span class="status-present"><i class="fas fa-check-circle me-1"></i>Present</span>
+                                {% else %}
+                                <span class="status-absent"><i class="fas fa-times-circle me-1"></i>Absent</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-muted">
+                                {% if record.recorded_hours != "-" %}
+                                    <i class="fas fa-clock me-1 text-info"></i>{{ record.recorded_hours }} hrs
+                                {% elif record.is_present %}
+                                    <i class="fas fa-check text-success opacity-50"></i> Marked Present
+                                {% else %}
+                                    -
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="3" class="text-center text-muted py-4">No records found for the past 30 days.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,20 @@
+Starting Verification...
+Testing Emergency Case Creation...
+[2026-02-18 14:14:28.357463+00:00] SMS SENT to dr_notif (Mock): URGENT: New Emergency Case! Patient: Emergency Patient X, Severity: Critical, Symptoms: Chest Pain, Difficulty Breathing
+[2026-02-18 14:14:28.364604+00:00] SMS SENT to nurse_notif (Mock): URGENT: New Emergency Case! Patient: Emergency Patient X, Severity: Critical, Symptoms: Chest Pain, Difficulty Breathing
+[2026-02-18 14:14:28.495192+00:00] SMS SENT to dr_notif (Mock): URGENT: New Emergency Case! Patient: Emergency Patient X, Severity: Critical, Symptoms: Chest Pain, Difficulty Breathing
+[2026-02-18 14:14:28.502313+00:00] SMS SENT to nurse_notif (Mock): URGENT: New Emergency Case! Patient: Emergency Patient X, Severity: Critical, Symptoms: Chest Pain, Difficulty Breathing
+View Response Code: 200
+Redirect Chain: [('/hospital/emergency/', 302)]
+SUCCESS: Emergency Case created. ID: 31
+SUCCESS: Notification created for Doctor: URGENT: New Emergency Case! Patient: Emergency Patient X, Severity: Critical, Symptoms: Chest Pain, Difficulty Breathing
+SUCCESS: Notification created for Nurse: URGENT: New Emergency Case! Patient: Emergency Patient X, Severity: Critical, Symptoms: Chest Pain, Difficulty Breathing
+
+Testing check_staff_notifications API...
+Function object: <function check_staff_notifications at 0x0000025728169C60>
+DEBUG: Found 2 DB notifications for dr_notif
+DEBUG: Notif: URGENT: New Emergency Case! Patient: Emergency Patient X, Severity: Critical, Symptoms: Chest Pain, Difficulty Breathing, Read: False
+DEBUG: Notif: URGENT: New Emergency Case! Patient: Emergency Patient X, Severity: Critical, Symptoms: Chest Pain, Difficulty Breathing, Read: False
+SUCCESS: API returned correct notification: 🚨 Emergency Alert - URGENT: New Emergency Case! Patient: Emergency Patient X, Severity: Critical, Symptoms: Chest Pain, Difficulty Breathing
+
+Cleaning up...

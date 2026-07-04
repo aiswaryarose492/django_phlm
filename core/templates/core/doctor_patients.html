@@ -1,0 +1,289 @@
+{% extends 'core/base.html' %}
+{% load static %}
+{% block title %}My Patients | Doctor{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h3 class="fw-bold mb-0 text-dark"><i class="fas fa-user-injured text-success me-2"></i>My Patients</h3>
+    <a href="{% url 'doctor_dashboard' %}" class="btn btn-outline-secondary rounded-pill shadow-sm">
+        <i class="fas fa-arrow-left me-1"></i> Back to Hub
+    </a>
+</div>
+
+<div class="card border-0 shadow-sm rounded-4 h-100">
+    <div class="card-header bg-white border-0 py-3 d-flex justify-content-between align-items-center">
+        <h5 class="fw-bold mb-0">Patient Directory</h5>
+
+        <div class="input-group input-group-sm w-auto shadow-sm">
+            <input type="text" class="form-control form-control-sm border-end-0" placeholder="Search patients..."
+                id="patientSearch">
+            <button class="btn btn-outline-success border" type="button"><i class="fas fa-search"></i></button>
+        </div>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0" id="patientsTable">
+                <thead class="bg-light">
+                    <tr>
+                        <th class="border-0 rounded-start-4 ps-4">Patient Name</th>
+                        <th class="border-0">Contact</th>
+                        <th class="border-0">Total Visits</th>
+                        <th class="border-0">Admission Status</th>
+                        <th class="border-0 rounded-end-4 text-end pe-4">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for p_stat in patient_stats %}
+                    <tr class="patient-row">
+                        <td class="ps-4 py-3">
+                            <div class="d-flex align-items-center">
+                                <div class="bg-success text-white rounded-circle d-flex align-items-center justify-content-center me-3"
+                                    style="width: 40px; height: 40px; font-weight: bold;">
+                                    {{ p_stat.patient.user.first_name|make_list|first }}
+                                </div>
+                                <div>
+                                    <div class="fw-bold text-dark patient-name">{{ p_stat.patient.user.get_full_name }}</div>
+                                    <div class="small text-muted">ID: #{{ p_stat.patient.id }}</div>
+                                </div>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="text-dark small">
+                                <i class="fas fa-phone-alt text-muted me-1"></i>
+                                {{ p_stat.patient.phone|default:"N/A" }}
+                            </div>
+                            <div class="text-muted small">
+                                <i class="fas fa-envelope text-muted me-1"></i>
+                                {{ p_stat.patient.user.email }}
+                            </div>
+                        </td>
+                        <td>
+                            <span class="badge bg-primary rounded-pill px-3">{{ p_stat.visit_count }} visits</span>
+                        </td>
+                        <td>
+                            {% if p_stat.admission %}
+                                <span class="badge bg-{% if p_stat.admission.status == 'Critical' %}danger{% elif p_stat.admission.status == 'Stable' %}success{% else %}warning text-dark{% endif %} rounded-pill px-3">
+                                    <i class="fas fa-procedures me-1"></i>{{ p_stat.admission.status }}
+                                </span>
+                                <div class="small text-muted mt-1">
+                                    {{ p_stat.admission.ward.ward_number }} | Bed {{ p_stat.admission.bed_number|default:"-" }}
+                                </div>
+                                {% if p_stat.admission.is_serious %}
+                                <span class="badge bg-danger-subtle text-danger mt-1">SERIOUS</span>
+                                {% endif %}
+                            {% else %}
+                                <span class="badge bg-light text-secondary border rounded-pill px-3">Not Admitted</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-end pe-4">
+                            {% if p_stat.admission %}
+                                <a href="{% url 'view_admission_details' p_stat.admission.id %}" class="btn btn-sm btn-outline-primary rounded-pill px-3 me-1 shadow-sm" title="View Details">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                                <a href="{% url 'discharge_patient' p_stat.admission.id %}" class="btn btn-sm btn-outline-success rounded-pill px-3 me-1 shadow-sm" title="Discharge">
+                                    <i class="fas fa-sign-out-alt"></i>
+                                </a>
+                            {% else %}
+                                <button class="btn btn-sm btn-outline-danger rounded-pill px-3 shadow-sm"
+                                    onclick="openAdmitModal('{{ p_stat.patient.id }}', '{{ p_stat.patient.user.get_full_name }}')"
+                                    title="Admit Patient">
+                                    <i class="fas fa-procedures me-1"></i>Admit
+                                </button>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="5" class="text-center py-5 text-muted">
+                            <div class="fs-1 mb-3 text-light-gray"><i class="fas fa-users-slash"></i></div>
+                            <h5>No patients found.</h5>
+                            <p class="small">You haven't seen any patients yet.</p>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Admit Patient Modal -->
+<div class="modal fade" id="admitPatientModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content border-0 rounded-4 shadow">
+            <div class="modal-header border-bottom-0 bg-danger bg-opacity-10 rounded-top-4 pb-0">
+                <h5 class="modal-title fw-bold text-dark"><i class="fas fa-procedures text-danger me-2"></i>Admit Patient</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4">
+                <form id="admitForm" method="post" action="{% url 'admit_patient' %}">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label class="form-label fw-bold small text-muted text-uppercase">Patient</label>
+                        <div class="fw-bold fs-5" id="admitPatientName"></div>
+                        <input type="hidden" name="patient_id" id="admitPatientId">
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold small text-muted text-uppercase mb-2">Select Ward *</label>
+                        <div class="row g-2" id="wardCardsContainer">
+                            <!-- Ward cards populated by JS -->
+                        </div>
+                        <input type="hidden" name="ward_id" id="admitWardId" required>
+                        <div class="mt-2">
+                            <small class="text-danger d-none" id="wardRequiredMsg">Please select a ward.</small>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold small text-muted text-uppercase">Bed Number</label>
+                        <input type="text" class="form-control border-light-subtle shadow-sm" name="bed_number" placeholder="e.g., B-12">
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold small text-muted text-uppercase">Admission Reason *</label>
+                        <textarea class="form-control border-light-subtle shadow-sm" name="admission_reason" rows="2" required placeholder="Reason for admission..."></textarea>
+                    </div>
+
+                    <div class="mb-3">
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" id="isSeriousToggle" name="is_serious">
+                            <label class="form-check-label fw-bold text-danger" for="isSeriousToggle">
+                                <i class="fas fa-exclamation-triangle me-1"></i> Mark as Serious / Critical
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="alert alert-info rounded-3 py-2 small mb-3">
+                        <i class="fas fa-info-circle me-1"></i> Nurses will be automatically assigned and notified. Ward occupancy will be updated.
+                    </div>
+
+                    <button type="submit" class="btn btn-danger w-100 rounded-pill py-2 shadow-sm fw-bold">
+                        <i class="fas fa-procedures me-1"></i> Admit Patient
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .ward-card:hover:not(.opacity-50) {
+        border-color: var(--bs-primary) !important;
+        box-shadow: 0 0.125rem 0.5rem rgba(13, 110, 253, 0.15);
+    }
+    .ward-card {
+        cursor: pointer;
+    }
+    .ward-card.opacity-50 {
+        cursor: not-allowed;
+    }
+</style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const searchInput = document.getElementById('patientSearch');
+        const tableRows = document.querySelectorAll('.patient-row');
+
+        if (searchInput) {
+            searchInput.addEventListener('keyup', function (e) {
+                const term = e.target.value.toLowerCase();
+                tableRows.forEach(row => {
+                    const name = row.querySelector('.patient-name').textContent.toLowerCase();
+                    if (name.includes(term)) {
+                        row.style.display = '';
+                    } else {
+                        row.style.display = 'none';
+                    }
+                });
+            });
+        }
+
+        // Admit Patient Modal
+        const wardsData = [
+            {% for ward in wards %}
+            { id: '{{ ward.id }}', number: '{{ ward.ward_number }}', type: '{{ ward.ward_type }}', available: {{ ward.available_beds }}, total: {{ ward.total_beds }} }{% if not forloop.last %},{% endif %}
+            {% endfor %}
+        ];
+
+        window.openAdmitModal = function (patientId, patientName) {
+            document.getElementById('admitPatientName').textContent = patientName;
+            document.getElementById('admitPatientId').value = patientId;
+            document.getElementById('admitWardId').value = '';
+            document.getElementById('wardRequiredMsg').classList.add('d-none');
+
+            // Populate ward cards
+            const container = document.getElementById('wardCardsContainer');
+            container.innerHTML = '';
+
+            if (wardsData.length === 0) {
+                container.innerHTML = '<div class="col-12 text-center text-muted py-3"><i class="fas fa-exclamation-circle me-1"></i>No wards configured. Please add wards first.</div>';
+            } else {
+                wardsData.forEach(function (ward) {
+                    const isFull = ward.available <= 0;
+                    const occupancyPct = ward.total > 0 ? Math.round((ward.total - ward.available) / ward.total * 100) : 0;
+                    let badgeClass = 'bg-success';
+                    if (isFull) badgeClass = 'bg-danger';
+                    else if (occupancyPct > 80) badgeClass = 'bg-warning text-dark';
+
+                    const col = document.createElement('div');
+                    col.className = 'col-md-6';
+                    col.innerHTML = `
+                        <div class="ward-card card border rounded-3 p-3 cursor-pointer ${isFull ? 'opacity-50' : ''}"
+                             data-ward-id="${ward.id}" data-available="${ward.available}"
+                             style="transition: all 0.2s; ${isFull ? 'pointer-events:none;' : ''}">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div>
+                                    <h6 class="fw-bold mb-1"><i class="fas fa-hospital me-1 text-primary"></i>${ward.number}</h6>
+                                    <span class="badge bg-primary bg-opacity-10 text-primary rounded-pill small">${ward.type}</span>
+                                </div>
+                                <span class="badge ${badgeClass} rounded-pill">
+                                    ${isFull ? 'FULL' : ward.available + ' available'}
+                                </span>
+                            </div>
+                            <div class="mt-2">
+                                <div class="d-flex justify-content-between small text-muted mb-1">
+                                    <span>Bed Utilization</span>
+                                    <span>${ward.total - ward.available} / ${ward.total} beds</span>
+                                </div>
+                                <div class="progress" style="height: 6px;">
+                                    <div class="progress-bar ${isFull ? 'bg-danger' : occupancyPct > 80 ? 'bg-warning' : 'bg-success'}"
+                                         style="width: ${occupancyPct}%"></div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                    container.appendChild(col);
+
+                    if (!isFull) {
+                        col.querySelector('.ward-card').addEventListener('click', function () {
+                            container.querySelectorAll('.ward-card').forEach(c => {
+                                c.classList.remove('border-primary', 'border-2', 'bg-primary', 'bg-opacity-10');
+                            });
+                            this.classList.add('border-primary', 'border-2', 'bg-primary', 'bg-opacity-10');
+                            document.getElementById('admitWardId').value = ward.id;
+                            document.getElementById('wardRequiredMsg').classList.add('d-none');
+                        });
+                    }
+                });
+            }
+
+            let m = new bootstrap.Modal(document.getElementById('admitPatientModal'));
+            m.show();
+        };
+
+        // Admit Form Validation
+        const admitForm = document.getElementById('admitForm');
+        if (admitForm) {
+            admitForm.addEventListener('submit', function (e) {
+                const wardId = document.getElementById('admitWardId').value;
+                if (!wardId) {
+                    e.preventDefault();
+                    document.getElementById('wardRequiredMsg').classList.remove('d-none');
+                    return false;
+                }
+            });
+        }
+    });
+</script>
+{% endblock %}

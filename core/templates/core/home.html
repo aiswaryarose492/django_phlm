@@ -1,0 +1,535 @@
+{% extends 'core/base.html' %}
+
+{% block title %}Welcome - PHLMS{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Custom Animations and Styles for Home Page */
+    body {
+        overflow-x: hidden;
+    }
+
+    .hero-section {
+        background: white;
+        min-height: 85vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        position: relative;
+        overflow: hidden;
+    }
+
+    /* Background decorative elements */
+    .bg-shape {
+        position: absolute;
+        opacity: 0.1;
+        z-index: 0;
+    }
+
+    .shape-1 {
+        top: 10%;
+        left: 5%;
+        font-size: 3rem;
+        color: #ff6b6b;
+        animation: float 6s ease-in-out infinite;
+    }
+
+    .shape-2 {
+        bottom: 20%;
+        right: 10%;
+        font-size: 4rem;
+        color: #4ecdc4;
+        animation: float 8s ease-in-out infinite reverse;
+    }
+
+    .shape-3 {
+        top: 15%;
+        right: 20%;
+        font-size: 2rem;
+        color: #45b7d1;
+        animation: pulse 3s infinite;
+    }
+
+    .hero-content {
+        z-index: 2;
+        max-width: 800px;
+        padding: 20px;
+    }
+
+    .brand-logo {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 2rem;
+        font-weight: 800;
+        font-size: 2rem;
+        color: #2c3e50;
+    }
+
+    /* Pulsing Heart Animation */
+    .heart-icon {
+        color: #ff4757;
+        font-size: 3.5rem;
+        margin-right: 15px;
+        animation: heartbeat 1.5s ease-in-out infinite;
+    }
+
+    @keyframes heartbeat {
+        0% {
+            transform: scale(1);
+        }
+
+        15% {
+            transform: scale(1.3);
+        }
+
+        30% {
+            transform: scale(1);
+        }
+
+        45% {
+            transform: scale(1.15);
+        }
+
+        60% {
+            transform: scale(1);
+        }
+
+        100% {
+            transform: scale(1);
+        }
+    }
+
+    .main-title {
+        font-size: 4rem;
+        font-weight: 800;
+        line-height: 1.2;
+        margin-bottom: 1.5rem;
+        background: linear-gradient(45deg, #2c3e50, #3498db);
+        -webkit-background-clip: text;
+        background-clip: text;
+        -webkit-text-fill-color: transparent;
+    }
+
+    .highlight-text {
+        color: #2ecc71;
+        -webkit-text-fill-color: #2ecc71;
+    }
+
+    .subtitle {
+        font-size: 1.25rem;
+        color: #7f8c8d;
+        margin-bottom: 3rem;
+        line-height: 1.6;
+    }
+
+    .btn-custom-primary {
+        background: linear-gradient(45deg, #1abc9c, #16a085);
+        border: none;
+        padding: 15px 40px;
+        border-radius: 50px;
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: white;
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .btn-custom-primary:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 10px 20px rgba(26, 188, 156, 0.3);
+        color: white;
+    }
+
+    .btn-custom-outline {
+        background: white;
+        border: 2px solid #ecf0f1;
+        padding: 15px 40px;
+        border-radius: 50px;
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: #34495e;
+        transition: all 0.3s ease;
+        margin-left: 15px;
+    }
+
+    .btn-custom-outline:hover {
+        border-color: #34495e;
+        background: #34495e;
+        color: white;
+    }
+
+    /* Feature Cards */
+    .features-section {
+        padding: 5rem 0;
+        background: #f8f9fa;
+    }
+
+    .feature-box {
+        background: white;
+        border-radius: 20px;
+        padding: 2rem;
+        text-align: center;
+        transition: transform 0.3s ease;
+        border: 1px solid rgba(0, 0, 0, 0.05);
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.02);
+        height: 100%;
+    }
+
+    .feature-box:hover {
+        transform: translateY(-10px);
+    }
+
+    .feature-icon-wrapper {
+        width: 80px;
+        height: 80px;
+        border-radius: 20px;
+        margin: 0 auto 1.5rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 2rem;
+        color: white;
+    }
+
+    .bg-gradient-1 {
+        background: linear-gradient(135deg, #00c6fb 0%, #005bea 100%);
+    }
+
+    .bg-gradient-2 {
+        background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 99%, #fecfef 100%);
+    }
+
+    .bg-gradient-3 {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    }
+
+    .bg-gradient-4 {
+        background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Decorative Background Shapes -->
+<div class="hero-section text-center position-relative">
+    <div class="container position-relative z-2">
+        <div class="row align-items-center">
+            <div class="col-lg-6 text-start mb-5 mb-lg-0">
+                <div class="brand-logo mb-4 justify-content-start">
+                    <i class="fas fa-heartbeat heart-icon text-danger"></i>
+                    <span class="fw-bold text-dark fs-2">PHLMS</span>
+                </div>
+
+                <h1 class="display-4 fw-bold mb-4 text-dark">
+                    Your Health, <br>
+                    <span class="text-primary">Our Priority.</span>
+                </h1>
+
+                <p class="lead text-secondary mb-5 pe-lg-5">
+                    Connect with top doctors, manage appointments, and track your health records - all in one place.
+                </p>
+
+                <div class="d-flex gap-3 justify-content-center justify-content-lg-start">
+                    {% if user.is_authenticated %}
+                    <a href="{% url 'dashboard' %}" class="btn btn-primary btn-lg rounded-pill px-5 shadow-lg">
+                        Dashboard <i class="fas fa-tachometer-alt ms-2"></i>
+                    </a>
+                    {% else %}
+                    <a href="{% url 'select_doctor' %}"
+                        class="btn btn-custom-primary btn-lg rounded-pill px-5 shadow-lg">
+                        Book Appointment <i class="fas fa-calendar-check ms-2"></i>
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="col-lg-6">
+                <div class="col-lg-6 text-center">
+                    <img src="https://img.freepik.com/free-vector/doctors-concept-illustration_114360-1515.jpg?w=740&t=st=1708354671~exp=1708355271~hmac=6217491104596950669151551515151515151515151515151515151515151515"
+                        alt="Online Doctor Consultation" class="img-fluid rounded-4 shadow-lg animation-float">
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function filterDoctors() {
+        const selectedDept = document.getElementById('deptSelect').value;
+        const docSelect = document.getElementById('docSelect');
+        const options = docSelect.querySelectorAll('option[data-dept]');
+
+        options.forEach(option => {
+            const docDept = option.getAttribute('data-dept');
+            if (selectedDept === "" || docDept === selectedDept) {
+                option.style.display = 'block';
+            } else {
+                option.style.display = 'none';
+            }
+        });
+        docSelect.value = "";
+    }
+</script>
+
+<!-- About Our Hospital Section -->
+<div class="py-5" style="background: #f8f9fa;">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-lg-6 mb-4 mb-lg-0">
+                <img src="https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?w=600&h=400&fit=crop"
+                    alt="Our Hospital" class="img-fluid rounded-4 shadow" style="object-fit: cover;">
+            </div>
+            <div class="col-lg-6">
+                <h4 class="section-title mb-3 text-start">About Our Hospital</h4>
+                <h3 class="fw-bold mb-4">Caring for Your Health with Excellence</h3>
+                <p class="text-muted mb-4">Welcome to PHLMS - Your Trusted Healthcare Partner. We are committed to
+                    providing the highest quality medical care with compassion and excellence. Our state-of-the-art
+                    facility is equipped with modern technology and staffed by experienced healthcare professionals
+                    dedicated to your well-being.</p>
+                <div class="row g-3 mb-4">
+                    <div class="col-6">
+                        <div class="d-flex align-items-center">
+                            <i class="fas fa-check-circle text-primary me-2"></i>
+                            <span>24/7 Emergency Services</span>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="d-flex align-items-center">
+                            <i class="fas fa-check-circle text-primary me-2"></i>
+                            <span>Advanced Medical Technology</span>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="d-flex align-items-center">
+                            <i class="fas fa-check-circle text-primary me-2"></i>
+                            <span>Expert Specialist Doctors</span>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="d-flex align-items-center">
+                            <i class="fas fa-check-circle text-primary me-2"></i>
+                            <span>Patient-Centered Care</span>
+                        </div>
+                    </div>
+                </div>
+                <a href="#doctors" class="btn btn-primary rounded-pill px-4">
+                    <i class="fas fa-user-md me-2"></i>Meet Our Doctors
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="features" class="features-section">
+    <div class="container">
+        <div class="row g-4">
+            <div class="col-md-3">
+                <div class="feature-box">
+                    <div class="feature-icon-wrapper bg-gradient-1">
+                        <i class="fas fa-stethoscope"></i>
+                    </div>
+                    <h5>Doctor Consultations</h5>
+                    <p class="text-muted small">Book appointments & consult online</p>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="feature-box">
+                    <div class="feature-icon-wrapper bg-gradient-2">
+                        <i class="fas fa-heartbeat"></i>
+                    </div>
+                    <h5>Health Monitoring</h5>
+                    <p class="text-muted small">Track vitals & get smart reminders</p>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="feature-box">
+                    <div class="feature-icon-wrapper bg-gradient-3">
+                        <i class="fas fa-user-nurse"></i>
+                    </div>
+                    <h5>Staff Management</h5>
+                    <p class="text-muted small">Manage hospital workforce efficiently</p>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="feature-box">
+                    <div class="feature-icon-wrapper bg-gradient-4">
+                        <i class="fas fa-shield-alt"></i>
+                    </div>
+                    <h5>Lab Reports</h5>
+                    <p class="text-muted small">Digital reports accessible instantly</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Statistics Section -->
+<div class="py-5" style="background: linear-gradient(135deg, #0891b2 0%, #0e7490 100%);">
+    <div class="container">
+        <div class="row text-center text-white">
+            <div class="col-6 col-md-3 mb-3">
+                <i class="fas fa-users fa-2x mb-2 opacity-75"></i>
+                <h2 class="fw-bold mb-1">10K+</h2>
+                <p class="mb-0 opacity-75">Happy Patients</p>
+            </div>
+            <div class="col-6 col-md-3 mb-3">
+                <i class="fas fa-user-md fa-2x mb-2 opacity-75"></i>
+                <h2 class="fw-bold mb-1">500+</h2>
+                <p class="mb-0 opacity-75">Expert Doctors</p>
+            </div>
+            <div class="col-6 col-md-3 mb-3">
+                <i class="fas fa-hospital fa-2x mb-2 opacity-75"></i>
+                <h2 class="fw-bold mb-1">50+</h2>
+                <p class="mb-0 opacity-75">Medical Centers</p>
+            </div>
+            <div class="col-6 col-md-3 mb-3">
+                <i class="fas fa-award fa-2x mb-2 opacity-75"></i>
+                <h2 class="fw-bold mb-1">15+</h2>
+                <p class="mb-0 opacity-75">Years Experience</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Our Doctors Section -->
+<div id="doctors" class="container my-5 py-4">
+    <h4 class="section-title mb-4 text-center">Our Expert Doctors</h4>
+    <p class="text-center text-muted mb-4">Meet our team of experienced healthcare professionals</p>
+    <div class="row g-4 justify-content-center">
+        {% for doc in doctors %}
+        <div class="col-md-4 col-lg-3">
+            <div class="card border-0 text-center h-100" style="box-shadow: 0 8px 30px rgba(0,0,0,0.08);">
+                {% if doc.image %}
+                <div class="position-relative">
+                    <img src="{{ doc.image.url }}" class="card-img-top" alt="Dr. {{ doc.user.get_full_name }}"
+                        style="height: 280px; object-fit: cover; object-position: top;">
+                    <span class="position-absolute top-0 end-0 badge bg-success m-2">Available</span>
+                </div>
+                {% endif %}
+                <div class="card-body">
+                    <h5 class="fw-bold mb-1">Dr. {{ doc.user.get_full_name }}</h5>
+                    <p class="text-primary small mb-2">{{ doc.specialty }}</p>
+                    <p class="text-muted small mb-3">{{ doc.experience|default:"5" }}+ years experience</p>
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="col-12 text-center">
+            <p class="text-muted">No doctors currently available.</p>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- Features Section -->
+<div class="container my-5 py-4">
+    <h4 class="section-title mb-4 text-center">Why Choose PHLMS</h4>
+    <div class="row g-4">
+        <div class="col-md-4">
+            <div class="p-4 text-center rounded-4 h-100"
+                style="background: white; box-shadow: 0 8px 30px rgba(0,0,0,0.06);">
+                <div class="mx-auto mb-3"
+                    style="width: 70px; height: 70px; background: linear-gradient(135deg, rgba(8,145,178,0.1), rgba(8,145,178,0.2)); border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                    <i class="fas fa-shield-alt fa-2x text-primary"></i>
+                </div>
+                <h5 class="fw-bold mb-2">Secure & Private</h5>
+                <p class="text-muted mb-0">Enterprise-grade security for your health data.</p>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="p-4 text-center rounded-4 h-100"
+                style="background: white; box-shadow: 0 8px 30px rgba(0,0,0,0.06);">
+                <div class="mx-auto mb-3"
+                    style="width: 70px; height: 70px; background: linear-gradient(135deg, rgba(99,102,241,0.1), rgba(99,102,241,0.2)); border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                    <i class="fas fa-clock fa-2x text-secondary"></i>
+                </div>
+                <h5 class="fw-bold mb-2">24/7 Availability</h5>
+                <p class="text-muted mb-0">Access healthcare anytime, anywhere.</p>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="p-4 text-center rounded-4 h-100"
+                style="background: white; box-shadow: 0 8px 30px rgba(0,0,0,0.06);">
+                <div class="mx-auto mb-3"
+                    style="width: 70px; height: 70px; background: linear-gradient(135deg, rgba(16,185,129,0.1), rgba(16,185,129,0.2)); border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                    <i class="fas fa-mobile-alt fa-2x text-success"></i>
+                </div>
+                <h5 class="fw-bold mb-2">Mobile Friendly</h5>
+                <p class="text-muted mb-0">Manage healthcare from any device.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Testimonials -->
+<div class="container my-5 py-4">
+    <h4 class="section-title mb-4 text-center">What Our Patients Say</h4>
+    <div class="row g-4">
+        <div class="col-md-4">
+            <div class="p-4 rounded-4" style="background: white; box-shadow: 0 8px 30px rgba(0,0,0,0.06);">
+                <div class="d-flex align-items-center mb-3">
+                    <img src="https://randomuser.me/api/portraits/women/44.jpg" alt="Patient"
+                        class="rounded-circle me-3" style="width: 50px; height: 50px; object-fit: cover;">
+                    <div>
+                        <h6 class="fw-bold mb-0">Sarah Johnson</h6><small class="text-muted">Patient</small>
+                    </div>
+                </div>
+                <p class="text-muted mb-0"><i class="fas fa-quote-left text-primary me-2"></i>PHLMS made booking
+                    appointments so easy!<i class="fas fa-quote-right text-primary ms-2"></i></p>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="p-4 rounded-4" style="background: white; box-shadow: 0 8px 30px rgba(0,0,0,0.06);">
+                <div class="d-flex align-items-center mb-3">
+                    <img src="https://randomuser.me/api/portraits/men/32.jpg" alt="Patient" class="rounded-circle me-3"
+                        style="width: 50px; height: 50px; object-fit: cover;">
+                    <div>
+                        <h6 class="fw-bold mb-0">Michael Chen</h6><small class="text-muted">Patient</small>
+                    </div>
+                </div>
+                <p class="text-muted mb-0"><i class="fas fa-quote-left text-primary me-2"></i>Great platform for
+                    healthcare management!<i class="fas fa-quote-right text-primary ms-2"></i></p>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="p-4 rounded-4" style="background: white; box-shadow: 0 8px 30px rgba(0,0,0,0.06);">
+                <div class="d-flex align-items-center mb-3">
+                    <img src="https://randomuser.me/api/portraits/women/68.jpg" alt="Patient"
+                        class="rounded-circle me-3" style="width: 50px; height: 50px; object-fit: cover;">
+                    <div>
+                        <h6 class="fw-bold mb-0">Emily Davis</h6><small class="text-muted">Patient</small>
+                    </div>
+                </div>
+                <p class="text-muted mb-0"><i class="fas fa-quote-left text-primary me-2"></i>Emergency system gives
+                    peace of mind!<i class="fas fa-quote-right text-primary ms-2"></i></p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Newsletter -->
+<div class="container my-5">
+    <div class="rounded-4 p-5 text-center text-white"
+        style="background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); box-shadow: 0 15px 50px rgba(0,0,0,0.2);">
+        <i class="fas fa-envelope fa-3x mb-3 opacity-75"></i>
+        <h4 class="fw-bold mb-2">Subscribe to Our Newsletter</h4>
+        <p class="mb-4 opacity-75">Get health tips and updates delivered to your inbox.</p>
+        <form class="row justify-content-center g-3">
+            <div class="col-md-6">
+                <input type="email" class="form-control form-control-lg rounded-pill" placeholder="Enter your email"
+                    style="border: none; padding: 15px 25px;">
+            </div>
+            <div class="col-auto">
+                <button type="submit" class="btn btn-light btn-lg rounded-pill px-4 fw-bold"
+                    style="color: #0891b2;">Subscribe</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="text-center mt-5 text-muted small">
+    <i class="fas fa-stethoscope me-2 text-primary"></i> PHLMS &copy; {% now "Y" %} — Healthcare made with <i
+        class="fas fa-heart text-danger"></i>
+</div>
+{% endblock %}

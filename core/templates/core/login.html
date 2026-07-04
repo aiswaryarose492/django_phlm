@@ -1,0 +1,212 @@
+{% extends 'core/base.html' %}
+
+{% block title %}Login - PHLMS{% endblock %}
+
+{% block extra_css %}
+<style>
+    body {
+        background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+    }
+
+    .login-wrapper {
+        min-height: 90vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        position: relative;
+        padding: 20px;
+    }
+
+    /* Background Elements */
+    .bg-icon {
+        position: absolute;
+        opacity: 0.06;
+        z-index: 0;
+        pointer-events: none;
+    }
+
+    .icon-1 {
+        top: 10%;
+        left: 10%;
+        font-size: 6rem;
+        color: #0891b2;
+        animation: float 6s infinite;
+    }
+
+    .icon-2 {
+        bottom: 10%;
+        right: 10%;
+        font-size: 5rem;
+        color: #6366f1;
+        animation: float 7s infinite reverse;
+    }
+
+    .icon-3 {
+        top: 50%;
+        left: 5%;
+        font-size: 4rem;
+        color: #10b981;
+    }
+
+    .icon-4 {
+        top: 20%;
+        right: 20%;
+        font-size: 3rem;
+        color: #f59e0b;
+    }
+
+    .login-card {
+        background: white;
+        border-radius: 24px;
+        box-shadow: 0 25px 80px rgba(0, 0, 0, 0.1);
+        overflow: hidden;
+        width: 100%;
+        max-width: 480px;
+        position: relative;
+        z-index: 2;
+        border-top: 6px solid #0891b2;
+    }
+
+    .login-header {
+        text-align:center;
+        padding: 3rem 2rem 1.5rem;
+        background: linear-gradient(135deg, rgba(8, 145, 178, 0.05), rgba(99, 102, 241, 0.05));
+    }
+
+    .pulsing-icon {
+        background: linear-gradient(135deg, #0891b2, #6366f1);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        font-size: 3.5rem;
+        margin-bottom: 1rem;
+        animation: heartbeat 1.5s ease-in-out infinite;
+    }
+
+    .login-body {
+        padding: 0 2.5rem 3rem;
+    }
+
+    .form-control {
+        border-radius: 14px;
+        padding: 14px 20px;
+        border: 2px solid #e2e8f0;
+        background-color: #f8fafc;
+        transition: all 0.3s ease;
+        font-weight: 500;
+    }
+
+    .form-control:focus {
+        border-color: #0891b2;
+        box-shadow: 0 0 0 4px rgba(8, 145, 178, 0.15);
+        background-color: white;
+    }
+
+    .form-label {
+        font-weight: 600;
+        color: #475569;
+        margin-bottom: 8px;
+    }
+
+    .btn-login {
+        background: linear-gradient(135deg, #0891b2, #0e7490);
+        border: none;
+        border-radius: 14px;
+        padding: 14px;
+        font-weight: 700;
+        font-size: 1.1rem;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 15px rgba(8, 145, 178, 0.3);
+    }
+
+    .btn-login:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 8px 25px rgba(8, 145, 178, 0.4);
+    }
+
+    .back-home {
+        position: absolute;
+        top: 25px;
+        left: 25px;
+        color: #64748b;
+        text-decoration: none;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        z-index: 10;
+    }
+
+    .back-home:hover {
+        color: #0891b2;
+        transform: translateX(-3px);
+    }
+
+    .form-check-label {
+        color: #64748b;
+        font-weight: 500;
+    }
+
+    @keyframes heartbeat {
+        0% { transform: scale(1); }
+        15% { transform: scale(1.15); }
+        30% { transform: scale(1); }
+        45% { transform: scale(1.1); }
+        60% { transform: scale(1); }
+        100% { transform: scale(1); }
+    }
+
+    @keyframes float {
+        0%, 100% { transform: translateY(0); }
+        50% { transform: translateY(-25px); }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="login-wrapper">
+    <!-- Floating Background Icons -->
+    <i class="fas fa-stethoscope bg-icon icon-1"></i>
+    <i class="fas fa-flask bg-icon icon-2"></i>
+    <i class="fas fa-heart-pulse bg-icon icon-3"></i>
+    <i class="fas fa-user-nurse bg-icon icon-4"></i>
+
+    <a href="{% url 'home' %}" class="back-home">
+        <i class="fas fa-arrow-left"></i> Back to Home
+    </a>
+
+    <div class="login-card">
+        <div class="login-header">
+            <i class="fas fa-heartbeat pulsing-icon"></i>
+            <h3 class="fw-bold text-dark">Welcome Back!</h3>
+            <p class="text-muted mb-0">Login to your PHLMS Dashboard</p>
+        </div>
+
+        <div class="login-body">
+            <form method="post">
+                {% csrf_token %}
+
+                {% if form.errors %}
+                <div class="alert alert-danger rounded-3 py-3 small mb-3 d-flex align-items-center">
+                    <i class="fas fa-exclamation-circle me-2"></i> Invalid username or password
+                </div>
+                {% endif %}
+
+                {% for field in form %}
+                <div class="mb-3">
+                    <label class="form-label ms-2">{{ field.label }}</label>
+                    {{ field }}
+                </div>
+                {% endfor %}
+
+                <div class="d-grid mt-4">
+                    <button type="submit" class="btn btn-primary btn-login">
+                        <i class="fas fa-sign-in-alt me-2"></i>Login
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
