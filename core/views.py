@@ -27,6 +27,18 @@ import random
 from datetime import datetime, timedelta
 from django.views.decorators.csrf import csrf_exempt
 
+
+
+from django.contrib.admin.views.decorators import staff_member_required
+from django.http import JsonResponse
+from django.contrib.auth import get_user_model
+
+@staff_member_required
+def debug_users(request):
+    User = get_user_model()
+    users = list(User.objects.all().values('id', 'username', 'is_active', 'is_staff', 'is_superuser'))
+    return JsonResponse({'users': users}, safe=False)
+
 @csrf_exempt
 def send_otp(request):
     """Send OTP to email for verification"""
