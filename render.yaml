@@ -1,0 +1,25 @@
+services:
+  - type: web
+    name: django-phlm-backend
+    runtime: python
+    buildCommand: "./build.sh"
+    startCommand: "gunicorn phlms_project.wsgi:application"
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.9
+      - key: DJANGO_SETTINGS_MODULE
+        value: phlms_project.settings
+      - key: SECRET_KEY
+        generateValue: true
+      - key: DEBUG
+        value: "False"
+      - key: ALLOWED_HOSTS
+        value: ".onrender.com localhost 127.0.0.1"
+      - key: DATABASE_URL
+        fromDatabase:
+          name: phlm-postgres-db
+          property: connectionString
+
+databases:
+  - name: phlm-postgres-db
+    plan: free

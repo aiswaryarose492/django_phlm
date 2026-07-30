@@ -23,6 +23,7 @@ from core.views import debug_users  # adjust import
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('', include('core.urls')),
+    path('api/', include('api.urls')),
     path('debug-users/', debug_users, name='debug_users'),
 ]
 
