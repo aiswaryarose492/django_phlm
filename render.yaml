@@ -2,6 +2,7 @@ services:
   - type: web
     name: django-phlm-backend
     runtime: python
+    plan: free
     buildCommand: "./build.sh"
     startCommand: "gunicorn phlms_project.wsgi:application"
     envVars:
