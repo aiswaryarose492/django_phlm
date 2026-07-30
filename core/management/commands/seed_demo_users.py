@@ -13,18 +13,6 @@ from core import models
 U = get_user_model()
 
 
-def ensure_hospital():
-    h, _ = models.Hospital.objects.get_or_create(
-        name='AZEEZIA HOSPITAL',
-        defaults={
-            'address': 'Demo Hospital Road, Kerala',
-            'max_leave_days': 12,
-            'extra_leave_deduction': 0.0,
-        },
-    )
-    return h
-
-
 def make_user(username, password, **flags):
     u, created = U.objects.get_or_create(username=username, defaults=flags)
     if not created:
@@ -39,18 +27,24 @@ class Command(BaseCommand):
     help = 'Create demo users for every role (admin/doctor/patient/lab/pharmacy/nurse/staff).'
 
     def handle(self, *args, **opts):
-        hospital = ensure_hospital()
-
-        # Hospital Admin
+        # 1. Create Hospital Admin user first
         admin = make_user(
             'admin', 'admin123',
             is_hospital_admin=True, is_staff=True,
             first_name='Hospital', last_name='Admin',
             email='admin@phlm.local',
         )
-        models.Hospital.objects.get_or_create(
-            user=admin, defaults={'name': 'AZEEZIA HOSPITAL',
-                                    'address': 'Demo Hospital Road, Kerala'})
+
+        # 2. Get or create the Hospital linked to the admin user
+        hospital, _ = models.Hospital.objects.get_or_create(
+            user=admin,
+            defaults={
+                'name': 'AZEEZIA HOSPITAL',
+                'address': 'Demo Hospital Road, Kerala',
+                'max_leave_days': 12,
+                'extra_leave_deduction': 0.0,
+            }
+        )
 
         # Doctor
         doc = make_user(
